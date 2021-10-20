@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadRtspStream", "LoadRtspS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkConstants", "NetworkConstants\NetworkConstants.csproj", "{1E67D15B-1DDF-468F-A765-3277C4424DD9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModifyColors", "ModifyColors\ModifyColors.csproj", "{EB695052-A3FE-4C65-A577-006413D26EF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB695052-A3FE-4C65-A577-006413D26EF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB695052-A3FE-4C65-A577-006413D26EF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB695052-A3FE-4C65-A577-006413D26EF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB695052-A3FE-4C65-A577-006413D26EF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

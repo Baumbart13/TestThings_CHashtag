@@ -5,16 +5,16 @@ namespace NetworkConstants
 {
     public static class Raspberry
     {
-        private static IPAddress address = new IPAddress(new byte[]{192,168,68,116});
+        private static IPEndPoint address = new IPEndPoint(
+            new IPAddress(new byte[]{192,168,68,116}),
+            8554);
 
         public const string USERNAME = "pi";
-        public const string PASSWORD = "Hubertus7362";
-        public static IPAddress => address
-        
+        public const string PASSWORD = "Orangensaft";
+        public static IPEndPoint Address => address;
 
-        static void foo()
-        {
-            var p = new IPAddress(address);
-        }
+        public const int VID_HEIGHT = 1000;
+        public const int VID_WIDTH = 1000;
+        public const int VID_FPS = 15;
     }
 }

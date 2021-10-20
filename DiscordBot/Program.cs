@@ -5,7 +5,7 @@ namespace DiscordBot
 {
     class Program
     {
-        static Task Main(string[] args) => CreateHostBuilder(args).RunConsoleAsync();
+        static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
         }

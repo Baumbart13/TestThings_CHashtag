@@ -9,4 +9,8 @@
 	  <PackageReference Include="Nager.VideoStream" Version="1.0.4" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\NetworkConstants\NetworkConstants.csproj" />
+	</ItemGroup>
+
 </Project>
