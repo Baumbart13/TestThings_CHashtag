@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -6,6 +8,8 @@ namespace ModifyColors
 {
     public class ImageManipulator
     {
+        private string lastMethodCalled = "";
+        
         public const int INTENSITY_LAYER_NUMBER = 256;
 
         public void RgbToGrayscale(ref Color[,] pixels, ref Bitmap img)
@@ -100,27 +104,78 @@ namespace ModifyColors
             return sum;
         }
 
-        public double OtsuOwn(ref Bitmap img)
+        internal struct XY
         {
-            // create the histogram of the image
-            var hist = CreateOwnHistogram(img);
+            public int X;
+            public int Y;
+        }
+        
+        public double AutomaticOwn(Bitmap img)
+        {
+            this.lastMethodCalled = "AutomaticOwn";
+            
+            var bestThresh = 10;
+            const int SOME_LIMIT = 5;
 
-            var bestThresh = 0;
-
-            var lowerClassPixelCount = 0;
-            var lowerClassIntensitySum = CreateIntensitySum(hist);
-            for (var thresh = 0; thresh < hist.Length; ++thresh)
+            while(true)
             {
-                
+
+                var lower = new List<XY>();
+                var upper = new List<XY>();
+                for (var x = 0; x < img.Width; ++x)
+                {
+                    for (var y = 0; y < img.Height; ++y)
+                    {
+                        if (img.GetPixel(x, y).GetBrightness() > (bestThresh / 255d))
+                        {
+                            upper.Add(new XY { X = x, Y = y });
+                        }
+                        else
+                        {
+                            lower.Add(new XY { X = x, Y = y });
+                        }
+                    }
+                }
+
+                var lowerMean = 0;
+                foreach (var p in lower)
+                {
+                    lowerMean += img.GetPixel(p.X, p.Y).B;
+                }
+
+                lowerMean = lowerMean / lower.Count;
+
+                var upperMean = 0;
+                foreach (var p in upper)
+                {
+                    upperMean += img.GetPixel(p.X, p.Y).B;
+                }
+
+                upperMean = upperMean / upper.Count;
+
+                var thresh = (upperMean + lowerMean) / 2;
+
+                if (Math.Abs(bestThresh - thresh) < SOME_LIMIT)
+                {
+                    bestThresh = thresh;
+                    break;
+                }
+
+                bestThresh = thresh;
+
+                lower.Clear();
+                upper.Clear();
             }
 
-            return 0.0d;
+            return bestThresh > 1.0d ? bestThresh / 256.0d : bestThresh;
         }
 
         /// <summary>Die Funktion gibt den Binarisierungsschwellenwert für ein Halbtonbild mit einer Gesamtanzahl von Pixeln zurück.</summary>
         /// <param name="image">Enthält die Intensität des Bildes von 0 bis einschließlich 255.</param>
-        public double Otsu(ref Bitmap bmp)
+        public double Otsu(Bitmap bmp)
         {
+            this.lastMethodCalled = "OtsuWikipedia";
+            
             var colors = new Color[bmp.Width, bmp.Height];
             RgbToGrayscale(ref colors, ref bmp);
             var pixels = colors2dToInt1d(ref colors);
@@ -166,8 +221,10 @@ namespace ModifyColors
             return bestTresh/255.0d;
         }
 
-        public double ThresholdWithStackOverflow(ref Bitmap img)
+        public double ThresholdWithStackOverflow(Bitmap img)
         {
+            this.lastMethodCalled = "ThreshWithStackOverflow";
+            
             var avgBright = 0.0d;
             for (var i = 0; i < img.Width; ++i)
             {
@@ -189,7 +246,7 @@ namespace ModifyColors
         /// <param name="thresh">The threshold to use</param>
         /// <returns>A Bitmap with the threshold applied orignal</returns>
         /// <exception cref="NotImplementedException"></exception>
-        public Bitmap ApplyThreshold(ref Bitmap img, double thresh)
+        public Bitmap ApplyThreshold(Bitmap img, double thresh)
         {
             /*if ((img.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed)
             {
@@ -205,8 +262,10 @@ namespace ModifyColors
                     for (var j = 0; j < img.Height; ++j)
                     {
                         var p = img.GetPixel(i, j);
+                        var gray = (p.B + p.G + p.R) / (3*256d);
 
-                        if (p.GetBrightness() >= p.GetBrightness() * thresh)
+                        if(p.GetBrightness() >= thresh)
+                        //if (gray >= thresh)
                         {
                             p = Color.White;
                         }
@@ -219,8 +278,15 @@ namespace ModifyColors
                     }
                 }
             }
+            
+            img.Dispose();
 
             return tempImg;
+        }
+
+        public override string ToString()
+        {
+            return lastMethodCalled;
         }
     }
 }
