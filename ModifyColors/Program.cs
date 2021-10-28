@@ -39,7 +39,6 @@ namespace ModifyColors
         static void Main(string[] args)
         {
             ClearDirectory(imageDest);
-            return;
 
             var files = ReadAllDirs();
             foreach(var d in files)
