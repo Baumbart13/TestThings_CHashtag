@@ -16,7 +16,7 @@ namespace ModifyColors
 
         public const int INTENSITY_LAYER_NUMBER = 256;
 
-        public Image RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
+        public Image<Rgba32> RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
             var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
@@ -72,6 +72,16 @@ namespace ModifyColors
             }
 
             return tempImg;
+        }
+
+        public Image<Rgba32> AdjustContrast(Image<Rgba32> img, double change)
+        {
+            throw new NotImplementedException("Thomas you faggot");
+        }
+
+        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, int change)
+        {
+            throw new NotImplementedException("Thomas you faggot");
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)

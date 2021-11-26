@@ -10,6 +10,5 @@ namespace ModifyColors
         BT2100,
         BT709,
         BT601,
-        
     }
 }

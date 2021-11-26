@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.IO.Enumeration;
+using System.Reflection;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 
 using CommandLine;
+
+using NLog;
+
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace ModifyColors
@@ -16,24 +20,34 @@ namespace ModifyColors
     class Program
     {
 
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         private class Options
         {
-            [Option('c', "contrast", Required=true, Default = 1.0d,
-                HelpText = "The change of the cntrast reaching from 0,0 to 2,0 as a double")]
+            [Option('c', "contrast", Required = true, Default = 1.0d,
+                HelpText = "The change of the contrast reaching from 0,0 to 2,0 as a double")]
             public double ContrastValue { get; set; }
 
             [Option('b', "brightness", Required = true, Default = 0,
                 HelpText = "The change of the brightness reaching from 0 to 256 as an integer")]
             public int BrightnessValue { get; set; }
             
+            [Option('g', "grayscale", Required = true, Default = GrayscaleMethod.AVG,
+                HelpText = "What kind of grayscaling shall be used as there is not only 1 way to achieve a grayscaled image")]
+            public GrayscaleMethod GrayscaleMethod { get; set; }
+
+            [Option("threshold", Required = false, Default = ThresholdMethod.None,
+                HelpText = "Choose the method you want to use to threshold the images")]
+            public ThresholdMethod ThreshMethod { get; set; }
+
             [Option("input", Required = false, Default = "/home/baumbart13/RiderProjects/TestThings/ModifyColors/res")]
             public string Input { get; set; }
-            
+
             [Option("output", Required = false, Default = "/home/baumbart13/RiderProjects/TestThings/ModifyColors/res/output")]
             public string Output { get; set; }
-            
-            [Option("threshold", Required = false)]
-            public ThresholdMethod ThreshMethod { get; set; }
+
+            [Option("debug", Required = false, Default = false, Hidden = true)]
+            public bool DebugMode { get; set; }
         }
 
         public struct Dirs
@@ -52,7 +66,7 @@ namespace ModifyColors
                 var fileName = src.Substring(src.LastIndexOf('/'));
                 var destDir = $"{imageDest}{fileName}";
                 
-                Console.WriteLine(
+                logger.Info(
                     $"Src: \"{src}\"\n" +
                     $"Dest: \"{destDir}\"");
 
@@ -67,6 +81,7 @@ namespace ModifyColors
 
             var contrast = opts.ContrastValue;
             var brightness = opts.BrightnessValue;
+            var grayMethod = opts.GrayscaleMethod;
 
             var threshMethod = opts.ThreshMethod;
 
@@ -75,7 +90,7 @@ namespace ModifyColors
             var files = ReadAllDirs(src, dest);
             foreach (var d in files)
             {
-                DoConversion(threshMethod, src, dest, contrast, brightness);
+                DoConversion(threshMethod, src, dest, contrast, brightness, grayMethod);
             }
         }
 
@@ -101,30 +116,35 @@ namespace ModifyColors
         private static ImageManipulator mp = new ImageManipulator();
         private static int counter = 0;
         private static void DoConversion(ThresholdMethod methodToUse, string bitmapToUse, string bitmapToSave,
-            double contrastValue, double brightnessValue)
+            double contrastValue, int brightnessValue, GrayscaleMethod grayMethod)
         {
             if (!DoesFileWork(bitmapToUse))
             {
-                Console.WriteLine($"Skipping file \"{bitmapToUse}\". Only png, jpg/.jpeg compatible for now");
+                logger.Warn($"Skipping file \"{bitmapToUse}\". Only png, jpg/.jpeg compatible for now");
                 return;
             }
 
-            Image img;
-            using(var inStream = new MemoryStream()){
-                using(var outStream = new MemoryStream())
-                {
-                    IImageFormat format;
-                    using (var image = Image.Load(inStream))
-                    {
-
-                    }
-                }
+            if (!File.Exists(bitmapToUse))
+            {
+                logger.Warn($"Skipping file \"{bitmapToUse}\", due to the fact, that this file does not exist");
             }
 
-            double thresh = .0d;
+            Image<Rgba32> img = null;
+            using(var inStream = File.Open(bitmapToUse, FileMode.Open))
+            {
+                img = Image.Load(inStream).CloneAs<Rgba32>();
+            }
+
+            if (img == null)
+            {
+                logger.Error($"Couldn't load file \"{bitmapToUse}\". Continuing with next file.");
+                return;
+            }
+
+            var thresh = .0d;
             if (methodToUse != ThresholdMethod.None)
             {
-                Console.WriteLine("Creating the threshold");
+                logger.Info("Creating the threshold");
             }
             switch (methodToUse)
             {
@@ -140,21 +160,24 @@ namespace ModifyColors
                     thresh = mp.ThresholdWithStackOverflow(img);
                     break;
                 case ThresholdMethod.StackOverflow2:
-                    Console.WriteLine("Attention, this method is not recommended!");
+                    logger.Warn("Attention, this method is not recommended!");
                     thresh = mp.ThresholdWithStackOverflowOther(img);
                     break;
             }
 
-            Console.WriteLine("Converting to grayscale");
-            img = mp.RgbToGrayscale(img);
-            Console.WriteLine($"Applying a contrast of {contrastValue}");
+            logger.Info("Converting to grayscale");
+            img = mp.RgbToGrayscale(grayMethod, img);
+            
+            logger.Info($"Applying a contrast of {contrastValue}");
             img = mp.AdjustContrast(img, contrastValue);
-            Console.WriteLine($"Applying a brightness of {brightnessValue}");
+            
+            logger.Info($"Applying a brightness of {brightnessValue}");
             img = mp.AdjustBrightness(img, brightnessValue);
-
+            
+            
             if (methodToUse != ThresholdMethod.None)
             {
-                Console.WriteLine($"Applying a threshold of {thresh}");
+                logger.Info($"Applying a threshold of {thresh}");
                 img = mp.ApplyThreshold(img, thresh);
             }
 
@@ -164,7 +187,8 @@ namespace ModifyColors
             var completeFilePath =
                 $"{path}" +
                 $"-contrast_{Math.Round(contrastValue, 6)}" +
-                $"-brightness_{brightnessValue}";
+                $"-brightness_{brightnessValue}" +
+                $"-grayscale_{grayMethod}";
             if (methodToUse != ThresholdMethod.None)
             {
                 completeFilePath +=
@@ -179,24 +203,31 @@ namespace ModifyColors
 
             var dirPath = new DirectoryInfo(path).Parent.FullName;
             
-            Console.WriteLine($"Directory to be created \"{dirPath}\"");
+            logger.Info($"Directory to be created: \"{dirPath}\"");
             if (!Directory.Exists(dirPath))
             {
                 Directory.CreateDirectory(dirPath);
             }
             
-            Console.WriteLine($"File's complete path: \"{completeFilePath}\"");
+            logger.Info($"Saving image to \"{completeFilePath}\"");
+            using (var outStream = File.Create(completeFilePath))
+            {
+                img.Save(outStream, new PngEncoder());
+            }
             img.Save(completeFilePath);
             
-            Console.WriteLine($"image No{++counter} saved");
+            logger.Info($"image No{++counter} saved");
             img.Dispose();
         }
 
         private static void ClearDirectory(string path)
         {
-            Console.WriteLine($"This path will be deleted:\n\"{path}\"\n");
+            logger.Info($"This path will be deleted:\n\"{path}\"\n");
             if(Directory.Exists(path))
             {
+                if(logger.IsDebugEnabled)
+                    logger.Debug("Exiting, because folder wants to get deleted");
+                Environment.Exit(0);
                 //Directory.Delete(path, true);
             }
         }
