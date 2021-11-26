@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Filters;
 
@@ -14,26 +15,22 @@ namespace ModifyColors
         
         public const int INTENSITY_LAYER_NUMBER = 256;
 
-        public Bitmap RgbToGrayscale(GrayscaleMethod grayMethod, Image img)
+        public Image RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
-            var pixels = img.Clone<>();
+            var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
             if (grayMethod == GrayscaleMethod.BT601)
             {
-                pixels.Mutate(i=>
+                tempImg.Mutate(i=>
                     i.Grayscale(GrayscaleMode.Bt601));
-                return pixels;
+                return tempImg;
             }
 
-            for (var i = 0; i < pixels.GetLength(0); ++i)
+            for (var i = 0; i < tempImg.Width; ++i)
             {
-                for (var j = 0; j < pixels.GetLength(1); ++j)
+                for (var j = 0; j < tempImg.Height; ++j)
                 {
-                    img.Mutate(i =>
-                    {
-                        i.
-                    });
-                    var p = img.GetPixel(i, j);
+                    var p = img[i, j];
                     int gray = 0;
 
                     var r = p.R;
@@ -68,14 +65,14 @@ namespace ModifyColors
                     }
 
                     var grayByte = (byte) (gray % 256);
-                    pixels[i, j] = Color.FromRgb(grayByte, grayByte, grayByte);
+                    tempImg[i, j] = new Rgba32(grayByte, grayByte, grayByte);
                 }
             }
 
-            return pixels;
+            return tempImg;
         }
 
-        private int[] colors2dToInt1d(ref Color[,] colors)
+        private int[] colors2dToInt1d(Rgba32[,] colors)
         {
             var pixels = new int[colors.Length];
             var counter = 0;
@@ -87,48 +84,50 @@ namespace ModifyColors
             return pixels;
         }
 
-        private void calculateHistogram(ref int[] pixels, int pixelCount, ref int[] hist)
+        private void CalculateHistogram(Image<Rgba32> img, int[] hist, int[] histR, int[] histG, int[] histB)
         {
             Array.Clear(hist, 0, hist.Length);
+            Array.Clear(histR, 0, histR.Length);
+            Array.Clear(histG, 0, histG.Length);
+            Array.Clear(histB, 0, histB.Length);
 
-            for (var i = 0; i < pixelCount; ++i)
+            for (var i = 0; i < img.Width; ++i)
             {
-                ++hist[pixels[i]];
+                for (var j = 0; j < img.Height; ++j)
+                {
+                    var p = img[i, j];
+                    ++hist[p.Rgba];
+                    ++histR[p.R];
+                    ++histG[p.G];
+                    ++histB[p.B];
+                }
             }
         }
 
-        private int calculateIntensitySum(ref int[] pixels, int pixelCount)
+        /// <summary>
+        /// Calculates the intensity-sum
+        /// </summary>
+        /// <param name="img">The image from where the sum gets created</param>
+        /// <returns>The intensity-sum</returns>
+        /// <exception cref="NotSupportedException">gets thrown in case of not parsing an grayscale-image</exception>
+        private int CalculateIntensitySum(Image<Rgba32> img)
         {
             var sum = 0;
-            foreach (var pixel in pixels)
-            {
-                sum += pixel;
-            }
 
-            return sum;
-        }
-        
-        public static long[] CreateOwnHistogram(Bitmap img)
-        {
-            var hist_gray = new long[256];
-            var hist_red = new long[256];
-            var hist_green = new long[256];
-            var hist_blue = new long[256];
-
-            for (var x = 0; x < img.Width; ++x)
+            for (var i = 0; i < img.Width; ++i)
             {
-                for (var y = 0; y < img.Height; ++y)
+                for (var j = 0; j < img.Height; ++j)
                 {
-                    var currP = img.GetPixel(x, y);
-                    hist_blue[currP.B]++;
-                    hist_green[currP.G]++;
-                    hist_red[currP.R]++;
-                    var tempGray = (currP.B + currP.G + currP.R) / 3;
-                    hist_gray[tempGray]++;
+                    var p = img[i,j];
+                    if (p.R == p.G || p.R == p.B || p.G == p.B)
+                    {
+                        throw new NotSupportedException("Only grayscale-images allowed!");
+                    }
+                    sum += img[i, j].B;
                 }
             }
 
-            return hist_gray;
+            return sum;
         }
 
         private long CreateIntensitySum(long[] hist)
@@ -219,11 +218,11 @@ namespace ModifyColors
             var pixels = colors2dToInt1d(ref colors);
 
             var histogram = new int[256];
-            calculateHistogram(ref pixels, pixels.Length, ref histogram);
+            CalculateHistogram(ref pixels, pixels.Length, ref histogram);
 
             // Wird benötigt, um den Unterschied in den Varianzen zwischen den Klassen schnell neu zu berechnen
             var allPixelCount = pixels.Length;
-            var allIntensitySum = calculateIntensitySum(ref pixels, pixels.Length);
+            var allIntensitySum = CalculateIntensitySum(ref pixels, pixels.Length);
 
             var bestTresh = 0;
             var bestSigma = 0.0d;
