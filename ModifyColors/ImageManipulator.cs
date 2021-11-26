@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Drawing;
-using System.Drawing.Imaging;
+using System.Diagnostics;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Filters;
 
 namespace ModifyColors
 {
@@ -12,18 +14,65 @@ namespace ModifyColors
         
         public const int INTENSITY_LAYER_NUMBER = 256;
 
-        public void RgbToGrayscale(ref Color[,] pixels, ref Bitmap img)
+        public Bitmap RgbToGrayscale(GrayscaleMethod grayMethod, Image img)
         {
+            var pixels = img.Clone<>();
+
+            if (grayMethod == GrayscaleMethod.BT601)
+            {
+                pixels.Mutate(i=>
+                    i.Grayscale(GrayscaleMode.Bt601));
+                return pixels;
+            }
+
             for (var i = 0; i < pixels.GetLength(0); ++i)
             {
                 for (var j = 0; j < pixels.GetLength(1); ++j)
                 {
+                    img.Mutate(i =>
+                    {
+                        i.
+                    });
                     var p = img.GetPixel(i, j);
-                    var gray = (p.R + p.G + p.B) / 3;
+                    int gray = 0;
 
-                    pixels[i, j] = Color.FromArgb(gray, gray, gray);
+                    var r = p.R;
+                    var g = p.G;
+                    var b = p.B;
+                    switch(grayMethod){
+                        case GrayscaleMethod.CV_RGB2GRAY:
+                            gray = (int)(0.30 * r + 0.59 * g + 0.11 * b);
+                            break;
+                        case GrayscaleMethod.SRGB:
+                            var linear = (int) (0.2126 * r + 0.7152 * g + 0.0722 * b);
+                            gray = linear <= 0.0031308
+                                ? (int) (12.92 * linear)
+                                : (int) (1.055 * Math.Pow(linear, 0.0416666666667d) - 0.055);
+                            break;
+                        case GrayscaleMethod.LINEAR:
+                            gray = (int) (0.2126 * r + 0.7152 * g + 0.0722 * b);
+                            break;
+                        case GrayscaleMethod.REC601:
+                            gray = (int) (0.299 * r + 0.587 * g + 0.114 * b);
+                            break;
+                        case GrayscaleMethod.BT709:
+                            gray = (int) (0.2126 * r + 0.7152 * g + 0.0722 * b);
+                            break;
+                        case GrayscaleMethod.BT2100:
+                            gray = (int) (0.2627 * r + 0.6780 * g + 0.0593 * b);
+                            break;
+                        case GrayscaleMethod.AVG:
+                        default:
+                            gray = (r+g+b) / 3;
+                            break;
+                    }
+
+                    var grayByte = (byte) (gray % 256);
+                    pixels[i, j] = Color.FromRgb(grayByte, grayByte, grayByte);
                 }
             }
+
+            return pixels;
         }
 
         private int[] colors2dToInt1d(ref Color[,] colors)
@@ -48,12 +97,6 @@ namespace ModifyColors
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pixels"></param>
-        /// <param name="pixelCount"></param>
-        /// <returns></returns>
         private int calculateIntensitySum(ref int[] pixels, int pixelCount)
         {
             var sum = 0;
@@ -64,12 +107,7 @@ namespace ModifyColors
 
             return sum;
         }
-
-        public void TryWithEmgu(Bitmap bmp)
-        {
-            //TODO : Try to understand EmguCV
-        }
-
+        
         public static long[] CreateOwnHistogram(Bitmap img)
         {
             var hist_gray = new long[256];
@@ -85,8 +123,8 @@ namespace ModifyColors
                     hist_blue[currP.B]++;
                     hist_green[currP.G]++;
                     hist_red[currP.R]++;
-                    var tempBrightness = (currP.B + currP.G + currP.R) / 3;
-                    hist_gray[tempBrightness]++;
+                    var tempGray = (currP.B + currP.G + currP.R) / 3;
+                    hist_gray[tempGray]++;
                 }
             }
 
@@ -238,34 +276,58 @@ namespace ModifyColors
             avgBright = avgBright < .3d ? .3 : avgBright;
             return avgBright > .7d ? .7d : avgBright;
         }
+        
+        public double ThresholdWithStackOverflowOther(Bitmap img)
+        {
+            this.lastMethodCalled = "ThreshWithStackOverflowOther";
+            
+            var avgBright = 0.0d;
+            for (var i = 0; i < img.Width; ++i)
+            {
+                for (var j = 0; j < img.Height; ++j)
+                {
+                    avgBright += img.GetPixel(i, j).GetBrightness();
+                }
+            }
+
+            return avgBright = avgBright / (img.Height * img.Width);
+            avgBright = avgBright < .3d ? .3 : avgBright;
+            return avgBright > .7d ? .7d : avgBright;
+        }
 
         /// <summary>
         /// Applies the threshold onto a new Bitmap.
         /// </summary>
         /// <param name="img">From where the pixels are read</param>
         /// <param name="thresh">The threshold to use</param>
+        /// <param name="fast">Safe and Slow or Unsafe and Fast</param>
         /// <returns>A Bitmap with the threshold applied orignal</returns>
         /// <exception cref="NotImplementedException"></exception>
-        public Bitmap ApplyThreshold(Bitmap img, double thresh)
+        public Bitmap ApplyThreshold(Bitmap img, double thresh, bool fast = false)
         {
             /*if ((img.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed)
             {
                 Console.WriteLine("Is indexed, need to abort (for now)");
                 throw new NotImplementedException("Cannot process indexed images yet");
             }*/
-
+            
             var tempImg = new Bitmap(img.Width, img.Height);
-            using (var g = Graphics.FromImage(tempImg))
+
+            if (fast)
+            {
+                throw new NotImplementedException();
+            }
+            else
             {
                 for (var i = 0; i < img.Width; ++i)
                 {
                     for (var j = 0; j < img.Height; ++j)
                     {
                         var p = img.GetPixel(i, j);
-                        var gray = (p.B + p.G + p.R) / (3*256d);
+                        var gray = (p.B + p.G + p.R) / (3 * 256d);
 
-                        if(p.GetBrightness() >= thresh)
-                        //if (gray >= thresh)
+                        if (p.GetBrightness() >= thresh)
+                            //if (gray >= thresh)
                         {
                             p = Color.White;
                         }
@@ -273,12 +335,12 @@ namespace ModifyColors
                         {
                             p = Color.Black;
                         }
-                        
-                        tempImg.SetPixel(i,j, p);
+
+                        tempImg.SetPixel(i, j, p);
                     }
                 }
             }
-            
+
             img.Dispose();
 
             return tempImg;

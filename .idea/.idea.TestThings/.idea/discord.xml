@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DiscordProjectSettings">
-    <option name="show" value="ASK" />
-    <option name="description" value="" />
+    <option name="show" value="PROJECT" />
+    <option name="nameOverrideEnabled" value="true" />
+    <option name="nameOverrideText" value="Phub Intro" />
+    <option name="description" value="Automatically plays the intro randomly" />
   </component>
 </project>

@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Publish AutoSound to folder" type="DotNetFolderPublish" factoryName="Publish to folder">
+    <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" ready_to_run="true" runtime="linux-x64" self_contained="true" target_folder="$PROJECT_DIR$/AutoSound/bin/Release/net5.0/publish" target_framework="net5.0" trim_unused_assemblies="true" uuid_high="6212550980170564472" uuid_low="-7614004073130388634" />
+    <method v="2" />
+  </configuration>
+</component>

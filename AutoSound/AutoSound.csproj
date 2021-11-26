@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+        <AssemblyName>AuSou</AssemblyName>
+        <RootNamespace>RuutSpace</RootNamespace>
+        <Company>BB</Company>
+        <Product>AuSou</Product>
+        <PackageId>AuSou</PackageId>
+        <Authors>Ruut</Authors>
+        <NeutralLanguage>fr-FR</NeutralLanguage>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="res" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="res\PornhubIntro.wav" />
+      <EmbeddedResource Include="res\PornhubIntro.wav" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="EasyCronJob.Core" Version="1.0.1" />
+      <PackageReference Include="Quartz" Version="3.3.3" />
+      <PackageReference Include="Quartz.Plugins" Version="3.3.3" />
+      <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
+      <PackageReference Include="SharpAudio" Version="1.0.53-beta" />
+      <PackageReference Include="SharpAudio.Codec" Version="1.0.53-beta" />
+    </ItemGroup>
+
+</Project>
