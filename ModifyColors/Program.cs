@@ -71,8 +71,8 @@ namespace ModifyColors
 
         static void Run(Options opts)
         {
-            var src = opts.Input.Remove('"');
-            var dest = opts.Output.Remove('"');
+            var src = opts.Input;
+            var dest = opts.Output;
 
             var contrast = opts.ContrastValue;
             var brightness = opts.BrightnessValue;
