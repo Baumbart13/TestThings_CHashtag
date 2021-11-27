@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 
+using ModifyColors.Extensions;
+
 using CommandLine;
 
 using NLog;
@@ -19,11 +21,11 @@ namespace ModifyColors
 
         private class Options
         {
-            [Option('c', "contrast", Required = true, Default = 1.0d,
+            [Option('c', "contrast", Required = false, Default = 1.0d,
                 HelpText = "The change of the contrast reaching from 0,0 to 2,0 as a double")]
             public double ContrastValue { get; set; }
 
-            [Option('b', "brightness", Required = true, Default = 0,
+            [Option('b', "brightness", Required = false, Default = 0,
                 HelpText = "The change of the brightness reaching from 0 to 256 as an integer")]
             public int BrightnessValue { get; set; }
             
@@ -71,8 +73,8 @@ namespace ModifyColors
 
         static void Run(Options opts)
         {
-            var src = opts.Input;
-            var dest = opts.Output;
+            var src = opts.Input.RemoveElement('"');
+            var dest = opts.Output.RemoveElement('"');
 
             var contrast = opts.ContrastValue;
             var brightness = opts.BrightnessValue;
@@ -85,7 +87,8 @@ namespace ModifyColors
             var files = ReadAllDirs(src, dest);
             foreach (var d in files)
             {
-                DoConversion(threshMethod, src, dest, contrast, brightness, grayMethod);
+                DoConversion(threshMethod, d.Src, d.Dest, contrast, brightness, grayMethod);
+                break;
             }
         }
 
@@ -110,7 +113,7 @@ namespace ModifyColors
 
         private static ImageManipulator mp = new ImageManipulator();
         private static int counter = 0;
-        private static void DoConversion(ThresholdMethod methodToUse, string bitmapToUse, string bitmapToSave,
+        private static void DoConversion(ThresholdMethod threshMethod, string bitmapToUse, string bitmapToSave,
             double contrastValue, int brightnessValue, GrayscaleMethod grayMethod)
         {
             if (!DoesFileWork(bitmapToUse))
@@ -137,11 +140,11 @@ namespace ModifyColors
             }
 
             var thresh = .0d;
-            if (methodToUse != ThresholdMethod.None)
+            if (threshMethod != ThresholdMethod.None)
             {
                 logger.Info("Creating the threshold");
             }
-            switch (methodToUse)
+            switch (threshMethod)
             {
                 case ThresholdMethod.None:
                     break;
@@ -162,68 +165,85 @@ namespace ModifyColors
 
             logger.Info("Converting to grayscale");
             img = mp.RgbToGrayscale(grayMethod, img);
+
+            if (Math.Abs(contrastValue - 1.0d) > 0.000001d)
+            {
+                logger.Info($"Applying a contrast of {contrastValue}");
+                img = mp.AdjustContrast(img, contrastValue);
+            }
+
+            if(brightnessValue != 0)
+            {
+                logger.Info($"Applying a brightness of {brightnessValue}");
+                img = mp.AdjustBrightness(img, brightnessValue);
+            }
             
-            logger.Info($"Applying a contrast of {contrastValue}");
-            img = mp.AdjustContrast(img, contrastValue);
             
-            logger.Info($"Applying a brightness of {brightnessValue}");
-            img = mp.AdjustBrightness(img, brightnessValue);
-            
-            
-            if (methodToUse != ThresholdMethod.None)
+            if (threshMethod != ThresholdMethod.None)
             {
                 logger.Info($"Applying a threshold of {thresh}");
                 img = mp.ApplyThreshold(img, thresh);
             }
 
-            var fileEnding = bitmapToSave.Substring(bitmapToSave.LastIndexOf('.'));
-            var path = bitmapToSave.Substring(0, bitmapToSave.LastIndexOf('.'));
-
-            var completeFilePath =
-                $"{path}" +
-                $"-contrast_{Math.Round(contrastValue, 6)}" +
-                $"-brightness_{brightnessValue}" +
-                $"-grayscale_{grayMethod}";
-            if (methodToUse != ThresholdMethod.None)
-            {
-                completeFilePath +=
-                    $"-threshVal_{thresh}" +
-                    $"-threshMethod_{methodToUse}" +
-                    $"{fileEnding}";
-            }
-            else
-            {
-                completeFilePath += $"{fileEnding}";
-            }
-
-            var dirPath = new DirectoryInfo(path).Parent.FullName;
+            var filePath = CreateStringForSaving(bitmapToSave, contrastValue, brightnessValue, grayMethod,
+                threshMethod, thresh);
             
+
+            var dirPath = new DirectoryInfo(filePath).Parent.FullName;
             logger.Info($"Directory to be created: \"{dirPath}\"");
             if (!Directory.Exists(dirPath))
             {
                 Directory.CreateDirectory(dirPath);
             }
             
-            logger.Info($"Saving image to \"{completeFilePath}\"");
-            using (var outStream = File.Create(completeFilePath))
+            logger.Info($"Saving image to \"{filePath}\"");
+            using (var outStream = File.Create(filePath))
             {
                 img.Save(outStream, new PngEncoder());
             }
-            img.Save(completeFilePath);
+            img.Save(filePath);
             
             logger.Info($"image No{++counter} saved");
             img.Dispose();
         }
 
+        private static string CreateStringForSaving(string imgSave, double contrast, int brightness,
+            GrayscaleMethod grayMethod, ThresholdMethod threshMethod, double thresh)
+        {
+            var fileEnding = imgSave.Substring(imgSave.LastIndexOf('.'));
+            var path = imgSave.Substring(0, imgSave.LastIndexOf('.'));
+
+            var completeFilePath = $"{path}";
+
+            if (Math.Abs(contrast - 1.0d) > 0.000001d)
+            {
+                completeFilePath += $"-contrast_{Math.Round(contrast, 6)}";
+            }
+
+            if (brightness != 0)
+            {
+                completeFilePath += $"-brightness_{brightness}";
+            }
+            
+            completeFilePath += $"-grayscale_{grayMethod}";
+            
+            if (threshMethod != ThresholdMethod.None)
+            {
+                completeFilePath +=
+                    $"-threshVal_{thresh}" +
+                    $"-threshMethod_{threshMethod}";
+            }
+            completeFilePath += $"{fileEnding}";
+
+            return completeFilePath;
+        }
+
         private static void ClearDirectory(string path)
         {
-            logger.Info($"This path will be deleted:\n\"{path}\"\n");
             if(Directory.Exists(path))
             {
-                if(logger.IsDebugEnabled)
-                    logger.Debug("Exiting, because folder wants to get deleted");
-                Environment.Exit(0);
-                //Directory.Delete(path, true);
+                logger.Info($"This path will be deleted:\n\"{path}\"\n");
+                Directory.Delete(path, true);
             }
         }
     }
