@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-
 using ModifyColors.Extensions;
-
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -75,12 +73,60 @@ namespace ModifyColors
 
         public Image<Rgba32> AdjustContrast(Image<Rgba32> img, double change)
         {
-            throw new NotImplementedException("Thomas you faggot");
+            change = (100.0d + change) * 0.01d;
+            change = change * change;
+
+            var tempImg = new Image<Rgba32>(img.Width, img.Height);
+
+            for (int i = 0; i < img.Width; ++i)
+            {
+                for (int j = 0; j < img.Height; ++j)
+                {
+                    var R = img[i, j].R;
+                    var G = img[i, j].G;
+                    var B = img[i, j].B;
+
+                    double Red = R / 255;
+                    double Blue = B / 255;
+                    double Green = G / 255;
+                    Red = (((Red - 0.5d) * change) + 0.5d) * 255.0d;
+                    Green = (((Green - 0.5d) * change) + 0.5d) * 255.0d;
+                    Blue = (((Blue - 0.5d) * change) + 0.5d) * 255.0d;
+
+                    var iR = Red > 0 ? (int) Red % 256 : (int) -Red % 256;
+                    var iG = Green > 0 ? (int) Green % 256 : (int) -Green % 256;
+                    var iB = Blue > 0 ? (int) Blue % 256 : (int) -Blue % 256;
+
+                    tempImg[i, j] = new Rgba32(iR, iG, iB);
+                }
+            }
+
+            return tempImg;
+        }
+
+        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, float change)
+        {
+            return AdjustBrightness(img, (double) change);
+        }
+
+        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, double change)
+        {
+            return AdjustBrightness(img, (int) (0.00787401574803 * change - 1.0d));
         }
 
         public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, int change)
         {
-            throw new NotImplementedException("Thomas you faggot");
+            const int lowerBound = 0;
+            const int upperBound = 255;
+            if (change is < lowerBound or > upperBound)
+            {
+                throw new ArgumentException($"Only Values from {lowerBound} to {upperBound} supported");
+            }
+
+            var tempImg = new Image<Rgba32>(img.Width, img.Height);
+
+
+            return tempImg;
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)
