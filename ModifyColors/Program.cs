@@ -35,10 +35,10 @@ namespace ModifyColors
                 HelpText = "Choose the method you want to use to threshold the images")]
             public ThresholdMethod ThreshMethod { get; set; }
 
-            [Option("input", Required = false, Default = "/home/baumbart13/RiderProjects/TestThings/ModifyColors/res")]
+            [Option("input", Required = false, Default = "./res")]
             public string Input { get; set; }
 
-            [Option("output", Required = false, Default = "/home/baumbart13/RiderProjects/TestThings/ModifyColors/res/output")]
+            [Option("output", Required = false, Default = "./res/output")]
             public string Output { get; set; }
 
             [Option("debug", Required = false, Default = false, Hidden = true)]
