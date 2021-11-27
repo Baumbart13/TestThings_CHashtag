@@ -26,8 +26,8 @@ namespace ModifyColors
             public double ContrastValue { get; set; }
 
             [Option('b', "brightness", Required = false, Default = 0,
-                HelpText = "The change of the brightness reaching from 0 to 256 as an integer")]
-            public int BrightnessValue { get; set; }
+                HelpText = "The change of the brightness reaching from -2,0 to 2,0 as a double")]
+            public double BrightnessValue { get; set; }
             
             [Option('g', "grayscale", Required = true, Default = GrayscaleMethod.AVG,
                 HelpText = "What kind of grayscaling shall be used as there is not only 1 way to achieve a grayscaled image")]
@@ -87,7 +87,14 @@ namespace ModifyColors
             var files = ReadAllDirs(src, dest);
             foreach (var d in files)
             {
-                DoConversion(threshMethod, d.Src, d.Dest, contrast, brightness, grayMethod);
+                if (!d.Src.Contains("TeslaCropped"))
+                    continue;
+                var b = -2.0d;
+                while(b <= 2.0d)
+                {
+                    DoConversion(threshMethod, d.Src, d.Dest, contrast, b, grayMethod);
+                    b += 0.01;
+                }
                 break;
             }
         }
@@ -114,7 +121,7 @@ namespace ModifyColors
         private static ImageManipulator mp = new ImageManipulator();
         private static int counter = 0;
         private static void DoConversion(ThresholdMethod threshMethod, string bitmapToUse, string bitmapToSave,
-            double contrastValue, int brightnessValue, GrayscaleMethod grayMethod)
+            double contrastValue, double brightnessValue, GrayscaleMethod grayMethod)
         {
             if (!DoesFileWork(bitmapToUse))
             {
@@ -207,7 +214,7 @@ namespace ModifyColors
             img.Dispose();
         }
 
-        private static string CreateStringForSaving(string imgSave, double contrast, int brightness,
+        private static string CreateStringForSaving(string imgSave, double contrast, double brightness,
             GrayscaleMethod grayMethod, ThresholdMethod threshMethod, double thresh)
         {
             var fileEnding = imgSave.Substring(imgSave.LastIndexOf('.'));
@@ -220,7 +227,7 @@ namespace ModifyColors
                 completeFilePath += $"-contrast_{Math.Round(contrast, 6)}";
             }
 
-            if (brightness != 0)
+            if (Math.Abs(brightness - 1.0d) > 0.000001d)
             {
                 completeFilePath += $"-brightness_{brightness}";
             }

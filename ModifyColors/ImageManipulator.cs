@@ -73,9 +73,11 @@ namespace ModifyColors
 
         public Image<Rgba32> AdjustContrast(Image<Rgba32> img, double change)
         {
+            change = change - 1.0d;
             change = (100.0d + change) * 0.01d;
             change = change * change;
 
+            // TODO: Fix contrast adjustement
             var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
             for (int i = 0; i < img.Width; ++i)
@@ -104,27 +106,49 @@ namespace ModifyColors
             return tempImg;
         }
 
+        /// <summary>
+        /// Changes the brightness of the picture
+        /// </summary>
+        /// <param name="img">The picture source</param>
+        /// <param name="change">A float reaching from -2 to 2</param>
+        /// <returns>The adjusted image</returns>
         public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, float change)
         {
             return AdjustBrightness(img, (double) change);
         }
 
+        /// <summary>
+        /// Changes the brightness of the picture
+        /// </summary>
+        /// <param name="img">The picture source</param>
+        /// <param name="change">A double reaching from -2 to 2</param>
+        /// <returns>The adjusted image</returns>
         public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, double change)
         {
-            return AdjustBrightness(img, (int) (0.00787401574803 * change - 1.0d));
+            return AdjustBrightness(img, (sbyte) (Math.Floor(63.75*change)));
         }
 
-        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, int change)
+        /// <summary>
+        /// Changes the brightness of the picture
+        /// </summary>
+        /// <param name="img">The picture source</param>
+        /// <param name="change">A signed byte</param>
+        /// <returns>The adjusted image</returns>
+        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, sbyte change)
         {
-            const int lowerBound = 0;
-            const int upperBound = 255;
-            if (change is < lowerBound or > upperBound)
-            {
-                throw new ArgumentException($"Only Values from {lowerBound} to {upperBound} supported");
-            }
-
             var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
+            for (var i = 0; i < img.Width; ++i)
+            {
+                for(var j = 0; j < img.Height; ++j)
+                {
+                    // just increase all channels by the changeValue
+                    byte r = (byte) (img[i, j].R + change);
+                    byte g = (byte) (img[i, j].G + change);
+                    byte b = (byte) (img[i, j].B + change);
+                    tempImg[i, j] = new Rgba32(r, g, b);
+                }
+            }
 
             return tempImg;
         }
