@@ -13,20 +13,19 @@ namespace ModifyColors
 
         public const int INTENSITY_LAYER_NUMBER = 256;
 
-        public Image<Rgba32> RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
+        public void RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
-            var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
             if (grayMethod == GrayscaleMethod.BT601)
             {
-                tempImg.Mutate(i =>
+                img.Mutate(i =>
                     i.Grayscale(GrayscaleMode.Bt601));
-                return tempImg;
+                return;
             }
 
-            for (var i = 0; i < tempImg.Width; ++i)
+            for (var i = 0; i < img.Width; ++i)
             {
-                for (var j = 0; j < tempImg.Height; ++j)
+                for (var j = 0; j < img.Height; ++j)
                 {
                     var p = img[i, j];
                     int gray = 0;
@@ -64,46 +63,41 @@ namespace ModifyColors
                     }
 
                     var grayByte = (byte) (gray % 256);
-                    tempImg[i, j] = new Rgba32(grayByte, grayByte, grayByte);
+                    img[i, j] = new Rgba32(grayByte, grayByte, grayByte);
                 }
             }
 
-            return tempImg;
+            return;
         }
 
-        public Image<Rgba32> AdjustContrast(Image<Rgba32> img, double change)
+        public void AdjustContrast(Image<Rgba32> img, double change)
         {
+            var contrast = ((100.0 + change) * 0.01d) * ((100.0 + change) * 0.01);
+            
             change = change - 1.0d;
             change = (100.0d + change) * 0.01d;
             change = change * change;
 
-            // TODO: Fix contrast adjustement
-            var tempImg = new Image<Rgba32>(img.Width, img.Height);
+            // TODO: Fix contrast adjustment
 
             for (int i = 0; i < img.Width; ++i)
             {
                 for (int j = 0; j < img.Height; ++j)
                 {
-                    var R = img[i, j].R;
-                    var G = img[i, j].G;
-                    var B = img[i, j].B;
+                    var old = img[i,j];
+                    var red = ((((old.R / 255.0) -0.5) * contrast) +0.5) * 255.0;
+                    var green = ((((old.G / 255.0) -0.5) * contrast) +0.5) * 255.0;
+                    var blue = ((((old.B / 255.0) -0.5) * contrast) +0.5) * 255.0;
 
-                    double Red = R / 255;
-                    double Blue = B / 255;
-                    double Green = G / 255;
-                    Red = (((Red - 0.5d) * change) + 0.5d) * 255.0d;
-                    Green = (((Green - 0.5d) * change) + 0.5d) * 255.0d;
-                    Blue = (((Blue - 0.5d) * change) + 0.5d) * 255.0d;
+                    var iR = (byte)((int)red);
+                    var iG = (byte)((int)green);
+                    var iB = (byte)((int)blue);
 
-                    var iR = Red > 0 ? (int) Red % 256 : (int) -Red % 256;
-                    var iG = Green > 0 ? (int) Green % 256 : (int) -Green % 256;
-                    var iB = Blue > 0 ? (int) Blue % 256 : (int) -Blue % 256;
-
-                    tempImg[i, j] = new Rgba32(iR, iG, iB);
+                    img[i, j] = new Rgba32(iR, iG, iB);
                 }
             }
 
-            return tempImg;
+            return;
         }
 
         /// <summary>
@@ -112,9 +106,9 @@ namespace ModifyColors
         /// <param name="img">The picture source</param>
         /// <param name="change">A float reaching from -2 to 2</param>
         /// <returns>The adjusted image</returns>
-        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, float change)
+        public void AdjustBrightness(Image<Rgba32> img, float change)
         {
-            return AdjustBrightness(img, (double) change);
+            AdjustBrightness(img, (double) change);
         }
 
         /// <summary>
@@ -123,9 +117,9 @@ namespace ModifyColors
         /// <param name="img">The picture source</param>
         /// <param name="change">A double reaching from -2 to 2</param>
         /// <returns>The adjusted image</returns>
-        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, double change)
+        public void AdjustBrightness(Image<Rgba32> img, double change)
         {
-            return AdjustBrightness(img, (sbyte) (Math.Floor(63.75*change)));
+            AdjustBrightness(img, (sbyte) (Math.Floor(63.75*change)));
         }
 
         /// <summary>
@@ -134,10 +128,8 @@ namespace ModifyColors
         /// <param name="img">The picture source</param>
         /// <param name="change">A signed byte</param>
         /// <returns>The adjusted image</returns>
-        public Image<Rgba32> AdjustBrightness(Image<Rgba32> img, sbyte change)
+        public void AdjustBrightness(Image<Rgba32> img, sbyte change)
         {
-            var tempImg = new Image<Rgba32>(img.Width, img.Height);
-
             for (var i = 0; i < img.Width; ++i)
             {
                 for(var j = 0; j < img.Height; ++j)
@@ -146,11 +138,9 @@ namespace ModifyColors
                     byte r = (byte) (img[i, j].R + change);
                     byte g = (byte) (img[i, j].G + change);
                     byte b = (byte) (img[i, j].B + change);
-                    tempImg[i, j] = new Rgba32(r, g, b);
+                    img[i, j] = new Rgba32(r, g, b);
                 }
             }
-
-            return tempImg;
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)
@@ -371,15 +361,13 @@ namespace ModifyColors
         /// <param name="thresh">The threshold to use</param>
         /// <returns>A Bitmap with the threshold applied orignal</returns>
         /// <exception cref="NotImplementedException"></exception>
-        public Image<Rgba32> ApplyThreshold(Image<Rgba32> img, double thresh)
+        public void ApplyThreshold(Image<Rgba32> img, double thresh)
         {
             /*if ((img.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed)
             {
                 Console.WriteLine("Is indexed, need to abort (for now)");
                 throw new NotImplementedException("Cannot process indexed images yet");
             }*/
-
-            var tempImg = new Image<Rgba32>(img.Width, img.Height);
 
             for (var i = 0; i < img.Width; ++i)
             {
@@ -398,13 +386,9 @@ namespace ModifyColors
                         p = Color.Black;
                     }
 
-                    tempImg[i, j] = p;
+                    img[i, j] = p;
                 }
             }
-
-            img.Dispose();
-
-            return tempImg;
         }
 
         public override string ToString()

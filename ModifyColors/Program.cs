@@ -6,8 +6,7 @@ using ModifyColors.Extensions;
 
 using CommandLine;
 
-using NLog;
-
+using NLog.Targets;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
@@ -17,7 +16,7 @@ namespace ModifyColors
     class Program
     {
 
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         private class Options
         {
@@ -57,9 +56,10 @@ namespace ModifyColors
         {
             foreach (var file in Directory.GetFiles(imageSrc))
             {
-                var src = file;
-                src.Replace('\\', '/');
+                logger.Info($"Loading source files");
+                var src = file.Replace('\\', '/');
 
+                
                 var fileName = src.Substring(src.LastIndexOf('/'));
                 var destDir = $"{imageDest}{fileName}";
                 
@@ -73,9 +73,15 @@ namespace ModifyColors
 
         static void Run(Options opts)
         {
+            logger.Info("Preparing...");
             var src = opts.Input.RemoveElement('"');
+            if (!Directory.Exists(src))
+            {
+                logger.Error($"{src} does not exist. Please select an existing directory");
+                return;
+            }
             var dest = opts.Output.RemoveElement('"');
-
+            
             var contrast = opts.ContrastValue;
             var brightness = opts.BrightnessValue;
             var grayMethod = opts.GrayscaleMethod;
@@ -84,16 +90,18 @@ namespace ModifyColors
 
             ClearDirectory(dest);
 
+            logger.Info("Starting work");
             var files = ReadAllDirs(src, dest);
             foreach (var d in files)
             {
                 if (!d.Src.Contains("TeslaCropped"))
                     continue;
-                var b = -2.0d;
-                while(b <= 2.0d)
+                var b = -2.0m;
+                while(b <= 2.0m)
                 {
-                    DoConversion(threshMethod, d.Src, d.Dest, contrast, b, grayMethod);
-                    b += 0.01;
+                    DoConversion(threshMethod, d.Src, d.Dest, contrast, double.Parse(b.ToString()), grayMethod);
+                    b += 0.01m;
+                    return;
                 }
                 break;
             }
@@ -101,6 +109,7 @@ namespace ModifyColors
 
         static void Main(string[] args)
         {
+            Target.Register<ModLogger>("Modify Colors");
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(opts => Run(opts));
         }
@@ -139,6 +148,7 @@ namespace ModifyColors
             {
                 img = Image.Load(inStream).CloneAs<Rgba32>();
             }
+            SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterLoading"), img);
 
             if (img == null)
             {
@@ -171,49 +181,49 @@ namespace ModifyColors
             }
 
             logger.Info("Converting to grayscale");
-            img = mp.RgbToGrayscale(grayMethod, img);
+            mp.RgbToGrayscale(grayMethod, img);
+            SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterGrayscale"), img);
+            
 
             if (Math.Abs(contrastValue - 1.0d) > 0.000001d)
             {
-                logger.Info($"Applying a contrast of {contrastValue}");
-                img = mp.AdjustContrast(img, contrastValue);
+                logger.Info($"Applying a contrast of {contrastValue:F2}");
+                mp.AdjustContrast(img, contrastValue);
+                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterContrast"), img);
             }
 
             if(brightnessValue != 0)
             {
-                logger.Info($"Applying a brightness of {brightnessValue}");
-                img = mp.AdjustBrightness(img, brightnessValue);
+                logger.Info($"Applying a brightness of {brightnessValue:F2}");
+                mp.AdjustBrightness(img, brightnessValue);
+                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterBrightness"), img);
             }
             
             
             if (threshMethod != ThresholdMethod.None)
             {
                 logger.Info($"Applying a threshold of {thresh}");
-                img = mp.ApplyThreshold(img, thresh);
+                mp.ApplyThreshold(img, thresh);
+                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterThreshold"), img);
             }
 
             var filePath = CreateStringForSaving(bitmapToSave, contrastValue, brightnessValue, grayMethod,
                 threshMethod, thresh);
             
+            SaveFile(filePath, img);
 
-            var dirPath = new DirectoryInfo(filePath).Parent.FullName;
-            logger.Info($"Directory to be created: \"{dirPath}\"");
-            if (!Directory.Exists(dirPath))
-            {
-                Directory.CreateDirectory(dirPath);
-            }
-            
-            logger.Info($"Saving image to \"{filePath}\"");
-            using (var outStream = File.Create(filePath))
-            {
-                img.Save(outStream, new PngEncoder());
-            }
-            img.Save(filePath);
-            
             logger.Info($"image No{++counter} saved");
             img.Dispose();
         }
 
+        private static string CreateStringForSaving(string imgSave, string counter)
+        {
+            var first = imgSave.Substring(0, imgSave.LastIndexOf('.'));
+            first += $"_{counter}_";
+            first += imgSave.Substring(imgSave.LastIndexOf('.'));
+            return first;
+        }
+        
         private static string CreateStringForSaving(string imgSave, double contrast, double brightness,
             GrayscaleMethod grayMethod, ThresholdMethod threshMethod, double thresh)
         {
@@ -224,12 +234,12 @@ namespace ModifyColors
 
             if (Math.Abs(contrast - 1.0d) > 0.000001d)
             {
-                completeFilePath += $"-contrast_{Math.Round(contrast, 6)}";
+                completeFilePath += $"-contrast_{contrast:F2}";
             }
 
             if (Math.Abs(brightness - 1.0d) > 0.000001d)
             {
-                completeFilePath += $"-brightness_{brightness}";
+                completeFilePath += $"-brightness_{brightness:F2}";
             }
             
             completeFilePath += $"-grayscale_{grayMethod}";
@@ -237,7 +247,7 @@ namespace ModifyColors
             if (threshMethod != ThresholdMethod.None)
             {
                 completeFilePath +=
-                    $"-threshVal_{thresh}" +
+                    $"-threshVal_{thresh:F2}" +
                     $"-threshMethod_{threshMethod}";
             }
             completeFilePath += $"{fileEnding}";
@@ -252,6 +262,23 @@ namespace ModifyColors
                 logger.Info($"This path will be deleted:\n\"{path}\"\n");
                 Directory.Delete(path, true);
             }
+        }
+
+        private static void SaveFile(string filePath, Image<Rgba32> img)
+        {
+            var dirPath = new DirectoryInfo(filePath).Parent.FullName;
+            logger.Info($"Directory to be created: \"{dirPath}\"");
+            if (!Directory.Exists(dirPath))
+            {
+                Directory.CreateDirectory(dirPath);
+            }
+            
+            logger.Info($"Saving image to \"{filePath}\"");
+            using (var outStream = File.Create(filePath))
+            {
+                img.Save(outStream, new PngEncoder());
+            }
+            img.Save(filePath);
         }
     }
 }
