@@ -1,11 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot", "DiscordBot\DiscordBot.csproj", "{67D6DE64-4FEB-438A-8924-954F3D22310A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadTcpStream", "LoadTcpStream\LoadTcpStream.csproj", "{ECC702D8-BB14-44DD-A7F5-A56928095910}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadRtspStream", "LoadRtspStream\LoadRtspStream.csproj", "{EF9EBB66-5B8D-4716-B2E3-6C3CE62303E7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkConstants", "NetworkConstants\NetworkConstants.csproj", "{1E67D15B-1DDF-468F-A765-3277C4424DD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModifyColors", "ModifyColors\ModifyColors.csproj", "{EB695052-A3FE-4C65-A577-006413D26EF0}"
@@ -20,18 +14,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{67D6DE64-4FEB-438A-8924-954F3D22310A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{67D6DE64-4FEB-438A-8924-954F3D22310A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{67D6DE64-4FEB-438A-8924-954F3D22310A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{67D6DE64-4FEB-438A-8924-954F3D22310A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ECC702D8-BB14-44DD-A7F5-A56928095910}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ECC702D8-BB14-44DD-A7F5-A56928095910}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ECC702D8-BB14-44DD-A7F5-A56928095910}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ECC702D8-BB14-44DD-A7F5-A56928095910}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EF9EBB66-5B8D-4716-B2E3-6C3CE62303E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EF9EBB66-5B8D-4716-B2E3-6C3CE62303E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EF9EBB66-5B8D-4716-B2E3-6C3CE62303E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EF9EBB66-5B8D-4716-B2E3-6C3CE62303E7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E67D15B-1DDF-468F-A765-3277C4424DD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
