@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using ModifyColors.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -104,44 +105,34 @@ namespace ModifyColors
         /// Changes the brightness of the picture
         /// </summary>
         /// <param name="img">The picture source</param>
-        /// <param name="change">A float reaching from -2 to 2</param>
-        /// <returns>The adjusted image</returns>
-        public void AdjustBrightness(Image<Rgba32> img, float change)
-        {
-            AdjustBrightness(img, (double) change);
-        }
-
-        /// <summary>
-        /// Changes the brightness of the picture
-        /// </summary>
-        /// <param name="img">The picture source</param>
-        /// <param name="change">A double reaching from -2 to 2</param>
-        /// <returns>The adjusted image</returns>
-        public void AdjustBrightness(Image<Rgba32> img, double change)
-        {
-            AdjustBrightness(img, (sbyte) (Math.Floor(63.75*change)));
-        }
-
-        /// <summary>
-        /// Changes the brightness of the picture
-        /// </summary>
-        /// <param name="img">The picture source</param>
-        /// <param name="change">A signed byte</param>
+        /// <param name="change">A signed byte reaching from -127 to 127</param>
         /// <returns>The adjusted image</returns>
         public void AdjustBrightness(Image<Rgba32> img, sbyte change)
         {
+            var changeCorrected = ((double)change) / 254;
             for (var i = 0; i < img.Width; ++i)
             {
                 for(var j = 0; j < img.Height; ++j)
                 {
                     // just increase all channels by the changeValue
                     // TODO: Fix overflow on brightness-adjustment
-                    byte r = (byte) (img[i, j].R + change);
-                    byte g = (byte) (img[i, j].G + change);
-                    byte b = (byte) (img[i, j].B + change);
+                    int r = img[i, j].R;
+                    int g = img[i, j].G;
+                    int b = img[i, j].B;
+                    r *= fixByteOverflow((int)Math.Ceiling(r * changeCorrected));
+                    g *= fixByteOverflow((int)Math.Ceiling(g * changeCorrected));
+                    b *= fixByteOverflow((int)Math.Ceiling(b * changeCorrected));
                     img[i, j] = new Rgba32(r, g, b);
                 }
             }
+
+            return;
+        }
+
+        private static int fixByteOverflow(int v)
+        {
+            if (v < 0) v = 0;
+            return v > 0xFF ? 0xFF : v;
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)

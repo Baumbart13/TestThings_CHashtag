@@ -25,8 +25,8 @@ namespace ModifyColors
             public double ContrastValue { get; set; }
 
             [Option('b', "brightness", Required = false, Default = 0,
-                HelpText = "The change of the brightness reaching from -2,0 to 2,0 as a double")]
-            public double BrightnessValue { get; set; }
+                HelpText = "The change of the brightness reaching from -127 to 127 as a signed byte")]
+            public int BrightnessValue { get; set; }
             
             [Option('g', "grayscale", Required = true, Default = GrayscaleMethod.AVG,
                 HelpText = "What kind of grayscaling shall be used as there is not only 1 way to achieve a grayscaled image")]
@@ -83,6 +83,10 @@ namespace ModifyColors
             var dest = opts.Output.RemoveElement('"');
             
             var contrast = opts.ContrastValue;
+            if (opts.BrightnessValue is < -127 or > 127)
+            {
+                logger.Error("");
+            }
             var brightness = opts.BrightnessValue;
             var grayMethod = opts.GrayscaleMethod;
 
@@ -96,12 +100,11 @@ namespace ModifyColors
             {
                 if (!d.Src.Contains("TeslaCropped"))
                     continue;
-                var b = -2.0m;
-                while(b <= 2.0m)
+                var b = -127;
+                while(b <= 127)
                 {
-                    DoConversion(threshMethod, d.Src, d.Dest, contrast, double.Parse(b.ToString()), grayMethod);
-                    b += 0.01m;
-                    return;
+                    DoConversion(threshMethod, d.Src, d.Dest, contrast, (sbyte)b, grayMethod);
+                    b += 1;
                 }
                 break;
             }
@@ -130,7 +133,7 @@ namespace ModifyColors
         private static ImageManipulator mp = new ImageManipulator();
         private static int counter = 0;
         private static void DoConversion(ThresholdMethod threshMethod, string bitmapToUse, string bitmapToSave,
-            double contrastValue, double brightnessValue, GrayscaleMethod grayMethod)
+            double contrastValue, sbyte brightnessValue, GrayscaleMethod grayMethod)
         {
             if (!DoesFileWork(bitmapToUse))
             {
@@ -148,7 +151,6 @@ namespace ModifyColors
             {
                 img = Image.Load(inStream).CloneAs<Rgba32>();
             }
-            SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterLoading"), img);
 
             if (img == null)
             {
@@ -182,21 +184,18 @@ namespace ModifyColors
 
             logger.Info("Converting to grayscale");
             mp.RgbToGrayscale(grayMethod, img);
-            SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterGrayscale"), img);
             
 
             if (Math.Abs(contrastValue - 1.0d) > 0.000001d)
             {
                 logger.Info($"Applying a contrast of {contrastValue:F2}");
                 mp.AdjustContrast(img, contrastValue);
-                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterContrast"), img);
             }
 
             if(brightnessValue != 0)
             {
-                logger.Info($"Applying a brightness of {brightnessValue:F2}");
+                logger.Info($"Applying a brightness of {brightnessValue}");
                 mp.AdjustBrightness(img, brightnessValue);
-                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterBrightness"), img);
             }
             
             
@@ -204,7 +203,6 @@ namespace ModifyColors
             {
                 logger.Info($"Applying a threshold of {thresh}");
                 mp.ApplyThreshold(img, thresh);
-                SaveFile(CreateStringForSaving(bitmapToSave, $"{counter++}afterThreshold"), img);
             }
 
             var filePath = CreateStringForSaving(bitmapToSave, contrastValue, brightnessValue, grayMethod,
