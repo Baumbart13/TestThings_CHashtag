@@ -135,6 +135,7 @@ namespace ModifyColors
                 for(var j = 0; j < img.Height; ++j)
                 {
                     // just increase all channels by the changeValue
+                    // TODO: Fix overflow on brightness-adjustment
                     byte r = (byte) (img[i, j].R + change);
                     byte g = (byte) (img[i, j].G + change);
                     byte b = (byte) (img[i, j].B + change);
