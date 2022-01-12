@@ -109,30 +109,45 @@ namespace ModifyColors
         /// <returns>The adjusted image</returns>
         public void AdjustBrightness(Image<Rgba32> img, sbyte change)
         {
-            var changeCorrected = ((double)change) / 254;
+            var changeCorrected = 0.00590551181d * (double)change + 1.25d;
+            
             for (var i = 0; i < img.Width; ++i)
             {
                 for(var j = 0; j < img.Height; ++j)
                 {
-                    // just increase all channels by the changeValue
-                    // TODO: Fix overflow on brightness-adjustment
                     int r = img[i, j].R;
                     int g = img[i, j].G;
                     int b = img[i, j].B;
-                    r *= fixByteOverflow((int)Math.Ceiling(r * changeCorrected));
-                    g *= fixByteOverflow((int)Math.Ceiling(g * changeCorrected));
-                    b *= fixByteOverflow((int)Math.Ceiling(b * changeCorrected));
+                    if (b > 240 || b < 10)
+                    {
+                        Console.WriteLine($"RGB value in image is {b}");
+                        Console.ReadKey();
+                    }
+                    
+                    r = (int)Math.Ceiling(r * changeCorrected);
+                    g = (int)Math.Ceiling(g * changeCorrected);
+                    b = (int)Math.Ceiling(b * changeCorrected);
+                    if (b > 255 || b < 0)
+                    {
+                        Console.WriteLine($"Changed RGB value is {b}");
+                        Console.ReadKey();
+                    }
+                    
+                    // clamp rgb between 0 and 255
+                    r = r < 0 ? 0 : (r > 0xFF ? 0xFF : r);
+                    g = g < 0 ? 0 : (g > 0xFF ? 0xFF : g);
+                    b = b < 0 ? 0 : (b > 0xFF ? 0xFF : b);
+
+                    if (b > 255 || b < 0)
+                    {
+                        Console.WriteLine($"Clamped value should not be this, but truly it is {b}");
+                        Console.ReadKey();
+                    }
                     img[i, j] = new Rgba32(r, g, b);
                 }
             }
 
             return;
-        }
-
-        private static int fixByteOverflow(int v)
-        {
-            if (v < 0) v = 0;
-            return v > 0xFF ? 0xFF : v;
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)

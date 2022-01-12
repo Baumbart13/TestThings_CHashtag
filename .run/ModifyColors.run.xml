@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ModifyColors" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/ModifyColors/bin/Debug/net5.0/ModifyColors.exe" />
-    <option name="PROGRAM_PARAMETERS" value="-b 1,2 -g AVG --input &quot;D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res&quot; --output &quot;D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\output&quot;" />
+    <option name="PROGRAM_PARAMETERS" value="-b 50 -g AVG --input &quot;C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res&quot; --output &quot;C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\output&quot;" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ModifyColors/bin/Debug/net5.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
