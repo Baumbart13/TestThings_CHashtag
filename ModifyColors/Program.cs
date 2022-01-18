@@ -21,26 +21,26 @@ namespace ModifyColors
         private class Options
         {
             [Option('c', "contrast", Required = false, Default = 1.0d,
-                HelpText = "The change of the contrast reaching from 0,0 to 2,0 as a double")]
-            public double ContrastValue { get; set; }
+                HelpText = "The change of the contrast reaching from 0,0 to 2,0 as a floating point number")]
+            public double ContrastValue { get; }
 
-            [Option('b', "brightness", Required = false, Default = 0,
-                HelpText = "The change of the brightness reaching from -127 to 127 as a signed byte")]
-            public int BrightnessValue { get; set; }
+            [Option('b', "brightness", Required = false, Default = 0.0d,
+                HelpText = "The change of the brightness reaching from 0,0 to 2,0 as a floating point number")]
+            public double BrightnessValue { get; }
             
             [Option('g', "grayscale", Required = true, Default = GrayscaleMethod.AVG,
-                HelpText = "What kind of grayscaling shall be used as there is not only 1 way to achieve a grayscaled image")]
-            public GrayscaleMethod GrayscaleMethod { get; set; }
+                HelpText = "What kind of gray-scaling shall be used as there is not only 1 way to achieve a grayscaled image")]
+            public GrayscaleMethod GrayscaleMethod { get; }
 
             [Option("threshold", Required = false, Default = ThresholdMethod.None,
                 HelpText = "Choose the method you want to use to threshold the images")]
-            public ThresholdMethod ThreshMethod { get; set; }
+            public ThresholdMethod ThreshMethod { get; }
 
             [Option("input", Required = false, Default = "./res")]
-            public string Input { get; set; }
+            public string Input { get; }
 
             [Option("output", Required = false, Default = "./res/output")]
-            public string Output { get; set; }
+            public string Output { get; }
 
             [Option("debug", Required = false, Default = false, Hidden = true)]
             public bool DebugMode { get; set; }
@@ -81,11 +81,19 @@ namespace ModifyColors
                 return;
             }
             var dest = opts.Output.RemoveElement('"');
+            if (src.Contains(dest))
+            {
+                logger.Error("The source directory needs to be above the destination directory or anywhere else. Otherwise the source directory will be removed completely." +
+                             $"\nSource given: \"{src}\"" +
+                             $"\nDestination given: \"{dest}\"");
+                return;
+            }
             
             var contrast = opts.ContrastValue;
-            if (opts.BrightnessValue is < -127 or > 127)
+            if (opts.BrightnessValue is < 0.0d or > 2.0d)
             {
-                logger.Error("");
+                logger.Error($"Brightness must be between, but including 0 and 2. Currently given: {opts.BrightnessValue}");
+                return;
             }
             var brightness = opts.BrightnessValue;
             var grayMethod = opts.GrayscaleMethod;
@@ -100,11 +108,11 @@ namespace ModifyColors
             {
                 if (!d.Src.Contains("TeslaCropped"))
                     continue;
-                var b = -127;
-                while(b <= 127)
+                var b = 0.0d;
+                while(b <= 2.0d)
                 {
-                    DoConversion(threshMethod, d.Src, d.Dest, contrast, (sbyte)b, grayMethod);
-                    b += 1;
+                    DoConversion(threshMethod, d.Src, d.Dest,(float)contrast, (float)b, grayMethod);
+                    b += 0.01d;
                 }
                 break;
             }
@@ -133,7 +141,7 @@ namespace ModifyColors
         private static ImageManipulator mp = new ImageManipulator();
         private static int counter = 0;
         private static void DoConversion(ThresholdMethod threshMethod, string bitmapToUse, string bitmapToSave,
-            double contrastValue, sbyte brightnessValue, GrayscaleMethod grayMethod)
+            float contrastValue, float brightnessValue, GrayscaleMethod grayMethod)
         {
             if (!DoesFileWork(bitmapToUse))
             {
@@ -192,7 +200,7 @@ namespace ModifyColors
                 mp.AdjustContrast(img, contrastValue);
             }
 
-            if(brightnessValue != 0)
+            if(!(brightnessValue < 0.0f))
             {
                 logger.Info($"Applying a brightness of {brightnessValue}");
                 mp.AdjustBrightness(img, brightnessValue);

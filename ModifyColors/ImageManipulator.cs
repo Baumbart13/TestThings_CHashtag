@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using ModifyColors.Extensions;
+using NLog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -12,16 +13,20 @@ namespace ModifyColors
     {
         private string lastMethodCalled = "";
 
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        
         public const int INTENSITY_LAYER_NUMBER = 256;
 
         public void RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
-
-            if (grayMethod == GrayscaleMethod.BT601)
+            switch (grayMethod)
             {
-                img.Mutate(i =>
-                    i.Grayscale(GrayscaleMode.Bt601));
-                return;
+                case GrayscaleMethod.BT601:
+                    img.Mutate(i => i.Grayscale(GrayscaleMode.Bt601));
+                    return;
+                case GrayscaleMethod.BT709:
+                    img.Mutate(i => i.Grayscale(GrayscaleMode.Bt709));
+                    return;
             }
 
             for (var i = 0; i < img.Width; ++i)
@@ -51,9 +56,6 @@ namespace ModifyColors
                         case GrayscaleMethod.REC601:
                             gray = (int) (0.299 * r + 0.587 * g + 0.114 * b);
                             break;
-                        case GrayscaleMethod.BT709:
-                            gray = (int) (0.2126 * r + 0.7152 * g + 0.0722 * b);
-                            break;
                         case GrayscaleMethod.BT2100:
                             gray = (int) (0.2627 * r + 0.6780 * g + 0.0593 * b);
                             break;
@@ -71,83 +73,32 @@ namespace ModifyColors
             return;
         }
 
-        public void AdjustContrast(Image<Rgba32> img, double change)
+        public void AdjustContrast(Image<Rgba32> img, float change)
         {
-            var contrast = ((100.0 + change) * 0.01d) * ((100.0 + change) * 0.01);
-            
-            change = change - 1.0d;
-            change = (100.0d + change) * 0.01d;
-            change = change * change;
-
-            // TODO: Fix contrast adjustment
-
-            for (int i = 0; i < img.Width; ++i)
+            if (change is < 0.0f or > 2.0f)
             {
-                for (int j = 0; j < img.Height; ++j)
-                {
-                    var old = img[i,j];
-                    var red = ((((old.R / 255.0) -0.5) * contrast) +0.5) * 255.0;
-                    var green = ((((old.G / 255.0) -0.5) * contrast) +0.5) * 255.0;
-                    var blue = ((((old.B / 255.0) -0.5) * contrast) +0.5) * 255.0;
-
-                    var iR = (byte)((int)red);
-                    var iG = (byte)((int)green);
-                    var iB = (byte)((int)blue);
-
-                    img[i, j] = new Rgba32(iR, iG, iB);
-                }
+                logger.Error("change must be between, but including 0 and 2.");
+                return;
             }
-
-            return;
+            img.Mutate(i =>
+                i.Contrast(change));
         }
 
         /// <summary>
         /// Changes the brightness of the picture
         /// </summary>
         /// <param name="img">The picture source</param>
-        /// <param name="change">A signed byte reaching from -127 to 127</param>
+        /// <param name="change">A signed byte reaching from 0.0 to 2.0</param>
         /// <returns>The adjusted image</returns>
-        public void AdjustBrightness(Image<Rgba32> img, sbyte change)
+        public void AdjustBrightness(Image<Rgba32> img, float change)
         {
-            var changeCorrected = 0.00590551181d * (double)change + 1.25d;
-            
-            for (var i = 0; i < img.Width; ++i)
+            if (change is < 0.0f or > 2.0f)
             {
-                for(var j = 0; j < img.Height; ++j)
-                {
-                    int r = img[i, j].R;
-                    int g = img[i, j].G;
-                    int b = img[i, j].B;
-                    if (b > 240 || b < 10)
-                    {
-                        Console.WriteLine($"RGB value in image is {b}");
-                        Console.ReadKey();
-                    }
-                    
-                    r = (int)Math.Ceiling(r * changeCorrected);
-                    g = (int)Math.Ceiling(g * changeCorrected);
-                    b = (int)Math.Ceiling(b * changeCorrected);
-                    if (b > 255 || b < 0)
-                    {
-                        Console.WriteLine($"Changed RGB value is {b}");
-                        Console.ReadKey();
-                    }
-                    
-                    // clamp rgb between 0 and 255
-                    r = r < 0 ? 0 : (r > 0xFF ? 0xFF : r);
-                    g = g < 0 ? 0 : (g > 0xFF ? 0xFF : g);
-                    b = b < 0 ? 0 : (b > 0xFF ? 0xFF : b);
-
-                    if (b > 255 || b < 0)
-                    {
-                        Console.WriteLine($"Clamped value should not be this, but truly it is {b}");
-                        Console.ReadKey();
-                    }
-                    img[i, j] = new Rgba32(r, g, b);
-                }
+                logger.Error("change must be between, but including 0 and 2.");
+                return;
             }
-
-            return;
+            img.Mutate(i =>
+                i.Brightness(change));
         }
 
         private int[] colors2dToInt1d(Rgba32[,] colors)
@@ -275,6 +226,101 @@ namespace ModifyColors
             return bestThresh > 1.0d ? bestThresh / 256.0d : bestThresh;
         }
 
+        /// <summary>
+        /// Checks the input for BinaryThreshold if the threshold is clamped between <code>0</code> and <code>1</code>
+        /// </summary>
+        /// <param name="f">The threshold to check</param>
+        /// <returns><code>true</code> if provided threshold is ok, otherwise <code>false</code></returns>
+        protected static bool BinaryThreshold_CheckInput(float f)
+        {
+            if (f < 0.0f)
+            {
+                logger.Error("Threshold is too low. Minimum is 0.0!");
+                return false;
+            }
+
+            if (f > 1.0f)
+            {
+                logger.Error("Threshold is too high. Maximum is 1.0!");
+                return false;
+            }
+
+            return true;
+        }
+        
+        /// <summary>
+        /// Image gets binarized by provided threshold by luminance.
+        /// </summary>
+        /// <param name="img">The image where the binarization will be applied to</param>
+        /// <param name="thresh">The threshold. Values less than 0.0 and greater than 1.0 are not accepted.</param>
+        public void BinaryThreshold_Luminance(Image<Rgba32> img, float thresh)
+        {
+            if (!BinaryThreshold_CheckInput(thresh))
+            {
+                return;
+            }
+            img.Mutate(i =>
+                i.BinaryThreshold(thresh, BinaryThresholdMode.Luminance));
+        }
+
+        /// <summary>
+        /// Image gets binarized by provided threshold by saturation.
+        /// </summary>
+        /// <param name="img">The image where the binarization will be applied to</param>
+        /// <param name="thresh">The threshold. Values less than 0.0 and greater than 1.0 are not accepted.</param>
+        public void BinaryThreshold_Saturation(Image<Rgba32> img, float thresh)
+        {
+            if (!BinaryThreshold_CheckInput(thresh))
+            {
+                return;
+            }
+            img.Mutate(i =>
+                i.BinaryThreshold(thresh, BinaryThresholdMode.Saturation));
+        }
+
+        /// <summary>
+        /// Image gets binarized by provided threshold by maximum chroma.
+        /// </summary>
+        /// <param name="img">The image where the binarization will be applied to</param>
+        /// <param name="thresh">The threshold. Values less than 0.0 and greater than 1.0 are not accepted.</param>
+        public void BinaryThreshold_MaxChroma(Image<Rgba32> img, float thresh)
+        {
+            if (!BinaryThreshold_CheckInput(thresh))
+            {
+                return;
+            }
+            img.Mutate(i =>
+                i.BinaryThreshold(thresh, BinaryThresholdMode.MaxChroma));
+        }
+        
+        /// <summary>
+        /// Image gets binarized with the adaptive method by Bradley.
+        /// </summary>
+        /// <param name="img">The image where the binarization will be applied to</param>
+        public void BradleyAdaptiveThreshold(Image<Rgba32> img)
+        {
+            img.Mutate(i =>
+                i.AdaptiveThreshold());
+        }
+
+        /// <summary>
+        /// Image gets binarized with the adaptive method by Bradley.
+        /// </summary>
+        /// <param name="img">The image where the binarization will be applied to</param>
+        /// <param name="thresh">The threshold. Values less than 0.0 and greater than 1.0 are not accepted.</param>
+        public void BradleyAdaptiveThreshold(Image<Rgba32> img, float thresh)
+        {
+            if (thresh is < 0.0f or > 1.0f)
+            {
+                BradleyAdaptiveThreshold(img);
+                return;
+            }
+            img.Mutate(i =>
+                i.AdaptiveThreshold(thresh));
+        }
+        
+        
+
         /// <summary>Die Funktion gibt den Binarisierungsschwellenwert für ein Halbtonbild mit einer Gesamtanzahl von Pixeln zurück.</summary>
         /// <param name="image">Enthält die Intensität des Bildes von 0 bis einschließlich 255.</param>
         public double Otsu(Image<Rgba32> img)
@@ -315,11 +361,9 @@ namespace ModifyColors
 
                 var sigma = firstClassProb * secondClassProb * meanDelta * meanDelta;
 
-                if (sigma > bestSigma)
-                {
-                    bestSigma = sigma;
-                    bestTresh = thresh;
-                }
+                if (!(sigma > bestSigma)) continue;
+                bestSigma = sigma;
+                bestTresh = thresh;
             }
 
             return bestTresh / 255.0d;

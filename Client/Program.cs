@@ -1,6 +1,7 @@
 ﻿using System;
 using NetMQ;
 using NetMQ.Sockets;
+using static NetworkConstants.Constants;
 
 static class Program
 {
@@ -8,9 +9,9 @@ static class Program
     {
         const string msg = "Hello";
         Console.WriteLine("Connecting to hello world server…");
-        using(var requester = new RequestSocket())
+        using(var requester = new NetMQ.Sockets.RequestSocket())
         {
-            requester.Connect("tcp://localhost:5555");
+            requester.Connect($"tcp://{TestIp}:{Port}");
 
             int requestNumber;
             for (requestNumber = 0; requestNumber != 10; requestNumber++)
