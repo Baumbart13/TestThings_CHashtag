@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMQ_DesktopClient", "NetMQ_DesktopClient\NetMQ_DesktopClient.csproj", "{76EAE3B7-CC33-4FC3-8512-EC4DF19B5440}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network", "Network\Network.csproj", "{2E99C592-2512-4C3A-BDE2-2C305C48AF20}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,5 +45,9 @@ Global
 		{76EAE3B7-CC33-4FC3-8512-EC4DF19B5440}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76EAE3B7-CC33-4FC3-8512-EC4DF19B5440}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76EAE3B7-CC33-4FC3-8512-EC4DF19B5440}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

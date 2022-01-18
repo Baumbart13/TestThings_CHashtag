@@ -4,6 +4,7 @@ using System.Text;
 using ModifyColors.Extensions;
 using NLog;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -17,8 +18,35 @@ namespace ModifyColors
         
         public const int INTENSITY_LAYER_NUMBER = 256;
 
+        public static void CheckAndCorrectImageFormat(Image<Rgba32> img)
+        {
+            if(img.GetConfiguration().Properties.ContainsKey(nameof(PixelFormat)))
+            {
+                logger.Info($"Image is fine and has {nameof(PixelFormat)} set");
+                return;
+            }
+
+            // need to set it
+            var onlyGrayPixels = true;
+            for (var i = 0; i < img.Width; i++)
+            {
+                for (var j = 0; j < img.Height; j++)
+                {
+                    var p = img[i, j];
+                    if (p.R != p.G || p.R != p.B || p.G != p.B)
+                    {
+                        img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Rgba32;
+                        return;
+                    }
+                }
+            }
+
+            img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Grayscale;
+        }
+
         public void RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
+            img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Grayscale;
             switch (grayMethod)
             {
                 case GrayscaleMethod.BT601:
