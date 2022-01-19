@@ -1,6 +1,6 @@
 namespace Network
 {
-    public enum MessageArgumentType
+    public enum MessageArgumentType : Int32
     {
         Byte,
         Character,

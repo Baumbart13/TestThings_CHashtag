@@ -1,6 +1,6 @@
 namespace Network
 {
-    public enum MessageType
+    public enum MessageType : Int32
     {
         Image = 0,
         ImageRequest = 1,
