@@ -23,6 +23,11 @@ namespace Network
             this.mMessageContent = new List<MessageArgument>();
         }
 
+        public NetMQ.NetMQMessage ToNetMqMessage()
+        {
+            
+        }
+
         public void AddString(String str)
         {
             // 4 byte - length of string
@@ -31,11 +36,11 @@ namespace Network
                 MessageArgumentType.Integer,
                 new MessageArgumentValue { Integer = str.Length }));
 
-            for (var i = 0; i < str.Length; ++i)
+            foreach(var x in str)
             {
                 this.mMessageContent.Add(new MessageArgument(
                     MessageArgumentType.Character,
-                    new MessageArgumentValue { Character = str[i] }));
+                    new MessageArgumentValue { Character = x }));
             }
         }
 
@@ -100,13 +105,11 @@ namespace Network
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Byte, val));
         }
 
-        public void AddByteArgumentRange(byte[] b)
+        public void AddByteArgument(params byte[] b)
         {
             foreach (var x in b)
             {
-                var val = new MessageArgumentValue();
-                val.Byte = x;
-                this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Byte, val));
+                AddByteArgument(x);
             }
         }
 
@@ -117,13 +120,11 @@ namespace Network
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Integer, val));
         }
 
-        public void AddIntegerArgumentRange(int[] i)
+        public void AddIntegerArgument(params int[] i)
         {
             foreach (var x in i)
             {
-                var val = new MessageArgumentValue();
-                val.Integer = x;
-                this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Integer, val));
+                AddIntegerArgument(x);
             }
         }
 
@@ -134,6 +135,14 @@ namespace Network
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Boolean, val));
         }
 
+        public void AddBooleanArgument(params bool[] b)
+        {
+            foreach (var x in b)
+            {
+                AddBooleanArgument(x);
+            }
+        }
+
         public void AddDoubleArgument(double d)
         {
             var val = new MessageArgumentValue();
@@ -141,11 +150,27 @@ namespace Network
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Double, val));
         }
 
+        public void AddDoubleArgument(params double[] d)
+        {
+            foreach(var x in d)
+            {
+                AddDoubleArgument(x);
+            }
+        }
+
         public void AddFloatArgument(float f)
         {
             var val = new MessageArgumentValue();
             val.Float = f;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Float, val));
+        }
+
+        public void AddFloatArgument(params float[] f)
+        {
+            foreach (var x in f)
+            {
+                AddFloatArgument(x);
+            }
         }
     }
 }

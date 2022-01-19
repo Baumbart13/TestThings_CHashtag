@@ -4,8 +4,14 @@ namespace Network.Extensions;
 
 public static class RequestSocketExtensions
 {
-    public static void SendFrame(this IOutgoingSocket socket, Message message, bool more = false)
+    public static void SendMessage(this IOutgoingSocket socket, Message message)
     {
-        socket.S
+        socket.SendMessage(message.ToNetMqMessage());
+    }
+
+    public static IOutgoingSocket SendMoreMessages(this IOutgoingSocket socket, Message message)
+    {
+        
+        return socket;
     }
 }
