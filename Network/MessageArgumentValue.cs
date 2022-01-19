@@ -12,15 +12,24 @@ namespace Network
 
         [FieldOffset(0)]
         public char Character;
+
+        [FieldOffset(0)]
+        public short Short;
         
         [FieldOffset(0)]
         public int Integer;
+
+        [FieldOffset(0)]
+        public long Long;
         
         [FieldOffset(0)]
         public float Float;
         
         [FieldOffset(0)]
         public double Double;
+
+        [FieldOffset(0)]
+        public decimal Decimal;
         
         [FieldOffset(0)]
         public bool Boolean;

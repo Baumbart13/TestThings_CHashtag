@@ -98,6 +98,7 @@ namespace Network
             }
         }
 
+#region AddArguments
         public void AddByteArgument(byte b)
         {
             var val = new MessageArgumentValue();
@@ -110,6 +111,36 @@ namespace Network
             foreach (var x in b)
             {
                 AddByteArgument(x);
+            }
+        }
+
+        public void AddCharacterArgument(char c)
+        {
+            var val = new MessageArgumentValue();
+            val.Character = c;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Character, val));
+        }
+
+        public void AddCharacterArgument(params char[] c)
+        {
+            foreach (var x in c)
+            {
+                AddCharacterArgument(x);
+            }
+        }
+
+        public void AddShortArgument(short c)
+        {
+            var val = new MessageArgumentValue();
+            val.Short = c;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Short, val));
+        }
+
+        public void AddShortArgument(params short[] c)
+        {
+            foreach (var x in c)
+            {
+                AddShortArgument(x);
             }
         }
 
@@ -128,18 +159,33 @@ namespace Network
             }
         }
 
-        public void AddBooleanArgument(bool b)
+        public void AddLongArgument(long i)
         {
             var val = new MessageArgumentValue();
-            val.Boolean = b;
-            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Boolean, val));
+            val.Long = i;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Long, val));
         }
 
-        public void AddBooleanArgument(params bool[] b)
+        public void AddLongArgument(params long[] i)
         {
-            foreach (var x in b)
+            foreach (var x in i)
             {
-                AddBooleanArgument(x);
+                AddLongArgument(x);
+            }
+        }
+
+        public void AddFloatArgument(float f)
+        {
+            var val = new MessageArgumentValue();
+            val.Float = f;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Float, val));
+        }
+
+        public void AddFloatArgument(params float[] f)
+        {
+            foreach (var x in f)
+            {
+                AddFloatArgument(x);
             }
         }
 
@@ -158,19 +204,35 @@ namespace Network
             }
         }
 
-        public void AddFloatArgument(float f)
+        public void AddDecimalArgument(decimal d)
         {
             var val = new MessageArgumentValue();
-            val.Float = f;
-            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Float, val));
+            val.Decimal = d;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Decimal, val));
         }
 
-        public void AddFloatArgument(params float[] f)
+        public void AddDecimalArgument(params decimal[] d)
         {
-            foreach (var x in f)
+            foreach (var x in d)
             {
-                AddFloatArgument(x);
+                AddDecimalArgument(x);
             }
         }
+
+        public void AddBooleanArgument(bool b)
+        {
+            var val = new MessageArgumentValue();
+            val.Boolean = b;
+            this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Boolean, val));
+        }
+
+        public void AddBooleanArgument(params bool[] b)
+        {
+            foreach (var x in b)
+            {
+                AddBooleanArgument(x);
+            }
+        }
+#endregion
     }
 }

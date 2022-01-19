@@ -4,9 +4,12 @@ namespace Network
     {
         Byte,
         Character,
+        Short,
         Integer,
+        Long,
         Float,
         Double,
+        Decimal,
         Boolean
     }
 }
