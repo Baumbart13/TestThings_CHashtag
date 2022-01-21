@@ -1,4 +1,4 @@
-namespace Network.Extensions;
+namespace Network;
 
 public static class ResponseSocketExtensions
 {

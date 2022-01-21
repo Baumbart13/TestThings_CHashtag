@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using ModifyColors;
 using ModifyColors.Extensions;
+using NetMQ;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats;
@@ -15,6 +16,13 @@ namespace Network
     {
         private readonly List<MessageArgument> mMessageContent;
         public IReadOnlyList<MessageArgument> Content => this.mMessageContent;
+
+        private uint mSize;
+        
+        /// <summary>
+        /// The Size of this message in bytes
+        /// </summary>
+        public uint Size => mSize;
         public MessageType MessageType { init; get; }
 
         public Message(MessageType type)
@@ -25,10 +33,16 @@ namespace Network
 
         public NetMQ.NetMQMessage ToNetMqMessage()
         {
+            // Split after type and then after 128 bytes
+            // Meaning 128/2 => 64 bytes are MessageArguments.. maximum
+            var netmqMsg = new NetMQMessage();
+
             
+            
+            return netmqMsg;
         }
 
-        public void AddString(String str)
+        public void AddString(string str)
         {
             // 4 byte - length of string
             // Length bytes - the characters
@@ -36,12 +50,7 @@ namespace Network
                 MessageArgumentType.Integer,
                 new MessageArgumentValue { Integer = str.Length }));
 
-            foreach(var x in str)
-            {
-                this.mMessageContent.Add(new MessageArgument(
-                    MessageArgumentType.Character,
-                    new MessageArgumentValue { Character = x }));
-            }
+            this.AddCharacterArgument(str.ToCharArray());
         }
 
         public void AddRgbImage(Image<Rgba32> img)
@@ -73,37 +82,44 @@ namespace Network
                     switch (pixelFormat)
                     {
                         case PixelFormat.Rgba32:
-                            this.mMessageContent.AddRange(new MessageArgument[]
-                            {
-                                new MessageArgument(
-                                    MessageArgumentType.Byte,
-                                    new MessageArgumentValue { Byte = p.R }),
-                                new MessageArgument(
-                                    MessageArgumentType.Byte,
-                                    new MessageArgumentValue { Byte = p.G }),
-                                new MessageArgument(
-                                    MessageArgumentType.Byte,
-                                    new MessageArgumentValue { Byte = p.B })
-                            });
+                            this.AddByteArgument(p.R, p.G, p.B);
                             break;
                         case PixelFormat.Grayscale:
-                            this.mMessageContent.Add(new MessageArgument(
-                                MessageArgumentType.Byte,
-                                new MessageArgumentValue { Byte = p.R }));
+                            this.AddByteArgument(p.R);
                             break;
                         default:
-                            throw new NotImplementedException("Only RGB and Greyscale are supported");
+                            throw new NotSupportedException("Only RGB and Greyscale are supported");
                     }
                 }
             }
         }
 
 #region AddArguments
+
+        private void UpdateLength(MessageArgumentType type)
+        {
+            this.mSize += sizeof(MessageArgumentType);
+            this.mSize += type switch
+            {
+                MessageArgumentType.Boolean => sizeof(bool),
+                MessageArgumentType.Byte => sizeof(byte),
+                MessageArgumentType.Character => sizeof(char),
+                MessageArgumentType.Short => sizeof(short),
+                MessageArgumentType.Integer => sizeof(int),
+                MessageArgumentType.Long => sizeof(long),
+                MessageArgumentType.Float => sizeof(float),
+                MessageArgumentType.Double => sizeof(double),
+                MessageArgumentType.Decimal => sizeof(decimal),
+                _ => throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)type}' is not supported")
+            };
+        }
+
         public void AddByteArgument(byte b)
         {
             var val = new MessageArgumentValue();
             val.Byte = b;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Byte, val));
+            UpdateLength(MessageArgumentType.Byte);
         }
 
         public void AddByteArgument(params byte[] b)
@@ -119,6 +135,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Character = c;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Character, val));
+            UpdateLength(MessageArgumentType.Character);
         }
 
         public void AddCharacterArgument(params char[] c)
@@ -134,6 +151,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Short = c;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Short, val));
+            UpdateLength(MessageArgumentType.Short);
         }
 
         public void AddShortArgument(params short[] c)
@@ -149,6 +167,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Integer = i;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Integer, val));
+            UpdateLength(MessageArgumentType.Integer);
         }
 
         public void AddIntegerArgument(params int[] i)
@@ -164,6 +183,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Long = i;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Long, val));
+            UpdateLength(MessageArgumentType.Long);
         }
 
         public void AddLongArgument(params long[] i)
@@ -179,6 +199,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Float = f;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Float, val));
+            UpdateLength(MessageArgumentType.Float);
         }
 
         public void AddFloatArgument(params float[] f)
@@ -194,6 +215,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Double = d;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Double, val));
+            UpdateLength(MessageArgumentType.Double);
         }
 
         public void AddDoubleArgument(params double[] d)
@@ -209,6 +231,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Decimal = d;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Decimal, val));
+            UpdateLength(MessageArgumentType.Decimal);
         }
 
         public void AddDecimalArgument(params decimal[] d)
@@ -224,6 +247,7 @@ namespace Network
             var val = new MessageArgumentValue();
             val.Boolean = b;
             this.mMessageContent.Add(new MessageArgument(MessageArgumentType.Boolean, val));
+            UpdateLength(MessageArgumentType.Boolean);
         }
 
         public void AddBooleanArgument(params bool[] b)
