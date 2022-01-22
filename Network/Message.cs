@@ -45,10 +45,28 @@ namespace Network
             var msg = new NetMQFrame(this.MessageType switch
             {
                 MessageType.Image => this.mMessageContent.Count,
+                MessageType.ImageRequest => 0,
                 _ => throw new NotImplementedException("Other types are not implemented by now")
             });
 
+            AddMsgContentMeta(msgMeta);
+            AddMsgContent(msg);
+
+            netmqMsg.Append(msg);
+            netmqMsg.Append(msgMeta);
+            netmqMsg.Append(meta);
+
             return netmqMsg;
+        }
+
+        private void AddMsgContentMeta(NetMQFrame frame)
+        {
+            // TODO: Implement Network.Message.AddMsgContentMeta(NetMQFrame)
+        }
+
+        private void AddMsgContent(NetMQFrame frame)
+        {
+            // TODO: Implement Network.Message.AddMsgContent(NetMQFrame)
         }
 
         public void AddString(string str)

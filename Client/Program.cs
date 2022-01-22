@@ -54,11 +54,8 @@ static class Program
                 }
                 img.Dispose();
                 
-                //requester.SendFrame(sb.ToString()); // as in a string decoded
-                var myMsg = new Network.Message();
-                var msgMeta = new NetMQFrame(sizeof(int));
-                var msgContentMeta = new NetMQFrame(sizeof(int) * 3);
-                var msgContentValue = new NetMQFrame(colFormat * img.Height * img.Height);
+                requester.SendFrame(sb.ToString()); // as in a string decoded
+                //requester.SendMultipartMessage(netMqMsg); // TODO: Create a NetMQMessage
                 var str = requester.ReceiveFrameString();
                 Console.WriteLine($"[{DateTime.Now}]: Server is saying: \"{str}\"");
             }
