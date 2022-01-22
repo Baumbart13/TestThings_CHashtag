@@ -33,12 +33,21 @@ namespace Network
 
         public NetMQ.NetMQMessage ToNetMqMessage()
         {
-            // Split after type and then after 128 bytes
-            // Meaning 128/2 => 64 bytes are MessageArguments.. maximum
             var netmqMsg = new NetMQMessage();
 
-            
-            
+            var meta = new NetMQFrame(sizeof(MessageType));
+            var msgMeta = new NetMQFrame(this.MessageType switch
+            {
+                MessageType.Image => 4 * 3, // ColorFormat, Height, Width
+                MessageType.ImageRequest => 0,
+                _ => throw new NotImplementedException("Other types are not implemented by now")
+            });
+            var msg = new NetMQFrame(this.MessageType switch
+            {
+                MessageType.Image => this.mMessageContent.Count,
+                _ => throw new NotImplementedException("Other types are not implemented by now")
+            });
+
             return netmqMsg;
         }
 
@@ -53,25 +62,21 @@ namespace Network
             this.AddCharacterArgument(str.ToCharArray());
         }
 
-        public void AddRgbImage(Image<Rgba32> img)
+        public void AddImage(Image<Rgba32> img)
         {
             // 4 byte - Width
             // 4 byte - Height
-            // 4 byte - ModifyColors.PixelFormat
-            // 4 byte - Bits per pixel
+            // 4 byte - ModifyColors.ColorFormat
 
-            // n byte = ([Bits per pixel] / 8) * Width * Height * ModifyColors.PixelFormat
+            // n byte = Width * Height * ModifyColors.ColorFormat
 
             this.AddIntegerArgument(img.Width);
             this.AddIntegerArgument(img.Height);
 
-            ModifyColors.ImageManipulator.CheckAndCorrectImageFormat(img);
-            var pixelFormat =
-                (ModifyColors.PixelFormat)img.GetConfiguration().Properties[nameof(ModifyColors.PixelFormat)];
-            this.AddIntegerArgument((int)pixelFormat);
+            ModifyColors.ImageManipulator.CheckAndCorrectColorFormat(img);
+            var colorFormat = ImageManipulator.GetColorFormat(img);
+            this.AddIntegerArgument((Int32)colorFormat);
 
-            var bpp = pixelFormat.GetBitsPerPixel();
-            this.AddIntegerArgument((int)bpp);
 
             for (var x = 0; x < img.Width; ++x)
             {
@@ -79,12 +84,12 @@ namespace Network
                 {
                     var p = img[x, y];
 
-                    switch (pixelFormat)
+                    switch (colorFormat)
                     {
-                        case PixelFormat.Rgba32:
+                        case ColorFormat.Rgba32:
                             this.AddByteArgument(p.R, p.G, p.B);
                             break;
-                        case PixelFormat.Grayscale:
+                        case ColorFormat.Grayscale:
                             this.AddByteArgument(p.R);
                             break;
                         default:

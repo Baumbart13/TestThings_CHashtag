@@ -1,6 +1,13 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Text;
+using ModifyColors;
 using NetMQ;
 using NetMQ.Sockets;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using static NetworkConstants.Constants;
 
 static class Program
@@ -11,15 +18,49 @@ static class Program
         Console.WriteLine("Connecting to hello world server…");
         using(var requester = new NetMQ.Sockets.RequestSocket())
         {
-            requester.Connect($"tcp://{TestIp}:{Port}");
+            requester.Connect($"tcp://{Localhost}:{Port}");
 
             int requestNumber;
-            for (requestNumber = 0; requestNumber != 10; requestNumber++)
+            //for (requestNumber = 0; requestNumber != 10; requestNumber++)
             {
-                Console.WriteLine($"[{DateTime.Now.Date}][{DateTime.Now.TimeOfDay}]: Sending \"{msg}\" with request number \"{requestNumber}\" to Server...");
-                requester.SendFrame(msg);
-                string str = requester.ReceiveFrameString();
-                Console.WriteLine($"[{DateTime.Now.Date}][{DateTime.Now.TimeOfDay}]: Received \"{str}\" with request number \"{requestNumber}\" from Server");
+                // Let's try this shit and send an image as a string
+                Image<Rgba32> img = null;
+                using(var inStream = File.Open(@"C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\Audi.png", FileMode.Open))
+                {
+                    img = Image.Load(inStream).CloneAs<Rgba32>();
+                    img.Mutate(i => i.Flip(FlipMode.Horizontal));
+                    img.Mutate(i => i.Rotate(RotateMode.Rotate270));
+                }
+
+                var sb = new StringBuilder();
+                sb.Append((int)ColorFormat.Rgba32);
+                sb.Append(';');
+                sb.Append(img.Height);
+                sb.Append(';');
+                sb.Append(img.Width);
+                sb.Append(';');
+                for (var x = 0; x < img.Height; ++x)
+                {
+                    for (var y = 0; y < img.Width; ++y)
+                    {
+                        var p = img[y, x];
+                        sb.Append(p.R);
+                        sb.Append(';');
+                        sb.Append(p.G);
+                        sb.Append(';');
+                        sb.Append(p.B);
+                        sb.Append(';');
+                    }
+                }
+                img.Dispose();
+                
+                //requester.SendFrame(sb.ToString()); // as in a string decoded
+                var myMsg = new Network.Message();
+                var msgMeta = new NetMQFrame(sizeof(int));
+                var msgContentMeta = new NetMQFrame(sizeof(int) * 3);
+                var msgContentValue = new NetMQFrame(colFormat * img.Height * img.Height);
+                var str = requester.ReceiveFrameString();
+                Console.WriteLine($"[{DateTime.Now}]: Server is saying: \"{str}\"");
             }
         }
     }    

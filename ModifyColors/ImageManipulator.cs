@@ -18,11 +18,11 @@ namespace ModifyColors
         
         public const int INTENSITY_LAYER_NUMBER = 256;
 
-        public static void CheckAndCorrectImageFormat(Image<Rgba32> img)
+        public static void CheckAndCorrectColorFormat(Image<Rgba32> img)
         {
-            if(img.GetConfiguration().Properties.ContainsKey(nameof(PixelFormat)))
+            if(img.GetConfiguration().Properties.ContainsKey(nameof(ColorFormat)))
             {
-                logger.Info($"Image is fine and has {nameof(PixelFormat)} set");
+                logger.Info($"Image is fine and has {nameof(ColorFormat)} set");
                 return;
             }
 
@@ -35,18 +35,24 @@ namespace ModifyColors
                     var p = img[i, j];
                     if (p.R != p.G || p.R != p.B || p.G != p.B)
                     {
-                        img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Rgba32;
+                        img.GetConfiguration().Properties[nameof(ColorFormat)] = ColorFormat.Rgba32;
                         return;
                     }
                 }
             }
 
-            img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Grayscale;
+            img.GetConfiguration().Properties[nameof(ColorFormat)] = ColorFormat.Grayscale;
+        }
+
+        public static ColorFormat GetColorFormat(Image<Rgba32> img)
+        {
+            var props = img.GetConfiguration().Properties;
+            return (ColorFormat)props[nameof(ColorFormat)];
         }
 
         public void RgbToGrayscale(GrayscaleMethod grayMethod, Image<Rgba32> img)
         {
-            img.GetConfiguration().Properties[nameof(PixelFormat)] = PixelFormat.Grayscale;
+            img.GetConfiguration().Properties[nameof(ColorFormat)] = ColorFormat.Grayscale;
             switch (grayMethod)
             {
                 case GrayscaleMethod.BT601:

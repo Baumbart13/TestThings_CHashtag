@@ -8,9 +8,11 @@
 
     <ItemGroup>
       <PackageReference Include="NetMQ" Version="4.0.1.6" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\ModifyColors\ModifyColors.csproj" />
       <ProjectReference Include="..\NetworkConstants\NetworkConstants.csproj" />
     </ItemGroup>
 
