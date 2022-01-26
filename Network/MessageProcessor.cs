@@ -2,15 +2,19 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Text;
+using NetMQ;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Network
 {
     public static class MessageParseExtension
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-        public static object Process(this Message msg)
+        
+        public static object Process(this NetMQMessage msg)
         {
+            
             switch (msg.MessageType)
             {
                 case MessageType.Image:
@@ -37,7 +41,7 @@ namespace Network
             return sb.ToString();
         }
 
-        public static Bitmap ReadImage(this Message msg)
+        public static Image<Rgba32> ReadImage(this Message msg)
         {
             if (msg.MessageType != MessageType.Image)
             {

@@ -31,6 +31,14 @@ namespace Network
             this.mMessageContent = new List<MessageArgument>();
         }
 
+        public Message FromNetMqMessage(NetMQMessage netMqMsg)
+        {
+            var msg = new Message();
+            
+
+            return msg;
+        }
+
         public NetMQ.NetMQMessage ToNetMqMessage()
         {
             var netmqMsg = new NetMQMessage();
