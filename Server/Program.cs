@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using ModifyColors;
 using NetMQ;
@@ -33,23 +35,33 @@ static class Program
 
                 using (var img = new Image<Rgba32>(Width, Height))
                 {
-                    for (var x = 0; x < Width; ++x)
+                    try
                     {
-                        for (var y = 0; y < Height; ++y)
+                        for (var x = 0; x < Width; ++x)
                         {
-                            var r = Convert.ToByte(strSeparated[currArgFromMsg++]);
-                            var g = Convert.ToByte(strSeparated[currArgFromMsg++]);
-                            var b = Convert.ToByte(strSeparated[currArgFromMsg++]);
-                            var newP = new Rgba32(r, g, b);
-                            img[x, y] = newP;
+                            for (var y = 0; y < Height; ++y)
+                            {
+                                var r = Convert.ToByte(strSeparated[currArgFromMsg++]);
+                                var g = Convert.ToByte(strSeparated[currArgFromMsg++]);
+                                var b = Convert.ToByte(strSeparated[currArgFromMsg++]);
+                                var newP = new Rgba32(r, g, b);
+                                img[x, y] = newP;
+                            }
                         }
+
+                        responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
+
+                        // save it
+                        img.SaveAsPng(@"C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\NetMQ.png");
+                        responseMsg += $"Saved Image at [{DateTime.Now}] as \"NetMQ.png\"";
                     }
-
-                    responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
-
-                    // save it
-                    img.SaveAsPng(@"C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\NetMQ.png");
-                    responseMsg += $"Saved Image at [{DateTime.Now}] as \"NetMQ.png\"";
+                    catch (Exception e)
+                    {
+                        Console.Error.WriteLine(e.Message);
+                        responder.SendFrame(e.Message);
+                        img.Dispose();
+                        continue;
+                    }
                 }
 
                 responder.SendFrame(responseMsg);
