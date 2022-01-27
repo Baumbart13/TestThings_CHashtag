@@ -11,20 +11,12 @@ namespace Network
     public static class MessageParseExtension
     {
         private static NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-        
-        public static object Process(this NetMQMessage msg)
+
+        public static Message ToArtemisMessage(this NetMQMessage msg)
         {
-            
-            switch (msg.MessageType)
-            {
-                case MessageType.Image:
-                    return ReadImage(msg);
-                case MessageType.String:
-                    return ReadString(msg);
-                default:
-                    Logger.Error($"This message with type {(int)msg.MessageType} does not exist. Length:{msg.Content.Count}");
-                    break;
-            }
+            var artemisMessage = new Message();
+            var containerFrame = msg[0];
+            containerFrame.
 
             return null;
         }

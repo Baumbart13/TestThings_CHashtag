@@ -28,7 +28,7 @@ public class ServerSocket : IDisposable
 
     private void Running()
     {
-        var address = IPEndPoint
+        var address = IPEndPoint.Parse(String.Empty); //TODO: Update ServerSocket
     }
 
     public void Stop()

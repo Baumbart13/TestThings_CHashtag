@@ -31,9 +31,9 @@ namespace Network
             this.mMessageContent = new List<MessageArgument>();
         }
 
-        public Message FromNetMqMessage(NetMQMessage netMqMsg)
+        public static Message FromNetMqMessage(NetMQMessage netMqMsg)
         {
-            var msg = new Message();
+            var msg = new Message(MessageType.Image);
             
 
             return msg;
@@ -43,7 +43,7 @@ namespace Network
         {
             var netmqMsg = new NetMQMessage();
 
-            var meta = new NetMQFrame(sizeof(MessageType));
+            var container = new NetMQFrame(sizeof(MessageType));
             var msgMeta = new NetMQFrame(this.MessageType switch
             {
                 MessageType.Image => 4 * 3, // ColorFormat, Height, Width
@@ -57,22 +57,28 @@ namespace Network
                 _ => throw new NotImplementedException("Other types are not implemented by now")
             });
 
-            AddMsgContentMeta(msgMeta);
-            AddMsgContent(msg);
+            FillMsgContainer(container);
+            FillMsgContentMeta(msgMeta);
+            FillMsgContent(msg);
 
             netmqMsg.Append(msg);
             netmqMsg.Append(msgMeta);
-            netmqMsg.Append(meta);
+            netmqMsg.Append(container);
 
             return netmqMsg;
         }
 
-        private void AddMsgContentMeta(NetMQFrame frame)
+        private static void FillMsgContainer(NetMQFrame container)
+        {
+            
+        }
+
+        private static void FillMsgContentMeta(NetMQFrame frame)
         {
             // TODO: Implement Network.Message.AddMsgContentMeta(NetMQFrame)
         }
 
-        private void AddMsgContent(NetMQFrame frame)
+        private static void FillMsgContent(NetMQFrame frame)
         {
             // TODO: Implement Network.Message.AddMsgContent(NetMQFrame)
         }
