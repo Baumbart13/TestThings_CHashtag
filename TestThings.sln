@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMQ_DesktopClient", "NetM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network", "Network\Network.csproj", "{2E99C592-2512-4C3A-BDE2-2C305C48AF20}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReoLinkApiSharp", "ReoLinkApiSharp\ReoLinkApiSharp.csproj", "{111DEE9E-5A84-4D8A-9A8A-CD6EA8C28EE0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReoLinkApiSharp_Client", "ReoLinkApiSharp_Client\ReoLinkApiSharp_Client.csproj", "{E5C658F4-D5BA-4017-A6C0-EA96FF4EE609}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,5 +53,13 @@ Global
 		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E99C592-2512-4C3A-BDE2-2C305C48AF20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{111DEE9E-5A84-4D8A-9A8A-CD6EA8C28EE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{111DEE9E-5A84-4D8A-9A8A-CD6EA8C28EE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{111DEE9E-5A84-4D8A-9A8A-CD6EA8C28EE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{111DEE9E-5A84-4D8A-9A8A-CD6EA8C28EE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5C658F4-D5BA-4017-A6C0-EA96FF4EE609}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5C658F4-D5BA-4017-A6C0-EA96FF4EE609}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5C658F4-D5BA-4017-A6C0-EA96FF4EE609}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5C658F4-D5BA-4017-A6C0-EA96FF4EE609}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
