@@ -8,6 +8,8 @@
 
 	<ItemGroup>
 	  <PackageReference Include="Emgu.CV" Version="4.5.5.4823" />
+	  <PackageReference Include="RestSharp" Version="107.1.2" />
+	  <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
 	</ItemGroup>
 
 </Project>

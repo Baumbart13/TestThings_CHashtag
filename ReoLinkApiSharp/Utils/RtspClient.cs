@@ -18,7 +18,7 @@ public class RtspClient
     /// <param name="password">Camera User Password</param>
     /// <param name="port">RTSP Port</param>
     /// <param name="profile">"main" or "sub"</param>
-    /// <param name="useUdp">True to use USP, False to use TCP</param>
+    /// <param name="useUdp">True to use UDP, False to use TCP</param>
     public RtspClient(IPAddress ip, string username, string password, int port = 554, Profile profile = Profile.main,
         bool useUdp = true)
     {
@@ -26,7 +26,7 @@ public class RtspClient
         this.Username = username;
         this.Password = password;
         this.Port = port;
-        this.Url = $"rtst://{Username}:{Password}@{IpAddress}:{Port}//h264Preview_01_{profile.ToString()}";
+        this.Url = $"rtsp://{Username}:{Password}@{IpAddress}:{Port}//h264Preview_01_{profile.ToString()}";
         var captureOption = useUdp ? "udp" : "tcp";
     }
 
@@ -66,12 +66,62 @@ public class RtspClient
         }
     }
 
-    public void StreamNonBlocking()
+    public async void StreamNonBlocking()
     {
         while (!ThreadCancelled)
         {
-            
+            try
+            {
+                if (Capture.IsOpened)
+                {
+                    var frame = new Mat();
+                    var ret = Capture.Read(frame);
+                    if (ret)
+                    {
+                        // Callback with frame
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Stream is closed");
+                    StopStream();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                StopStream();
+            }
         }
+    }
+
+    public void StopStream()
+    {
+        Capture.Stop();
+        Capture.Dispose();
+        ThreadCancelled = true;
+    }
+
+    /// <summary>
+    /// Opens OpenCV video stream and returns the result according to theOpenCV documentation
+    /// </summary>
+    public IEnumerable<Mat> OpenStream()
+    {
+        // Reset the capture object
+        if (Capture == null || !Capture.IsOpened)
+        {
+            OpenVideoCapture();
+        }
+        
+        Console.WriteLine("Opening stream");
+        
+        // Only if there is no callback, return blocking
+        // otherwise return blocking, if it is on a new task
+        // if it's even not that, return non-blocking stream
+        //
+        // Since there are no callbacks implemented, we can
+        // jump right onto returning blocking stream
+        return StreamBlocking();
     }
 
     public IPAddress IpAddress { get; set; }

@@ -26,7 +26,7 @@ static class Program
             {
                 // Let's try this shit and send an image as a string
                 Image<Rgba32> img = null;
-                using(var inStream = File.Open(@"C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\Kennzeichen.jpg", FileMode.Open))
+                using(var inStream = File.Open(@"D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\Audi.png", FileMode.Open))
                 {
                     img = Image.Load(inStream).CloneAs<Rgba32>();
                     //img.Mutate(i => i.Flip(FlipMode.Horizontal));

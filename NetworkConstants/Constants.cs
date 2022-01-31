@@ -6,7 +6,7 @@ namespace NetworkConstants
 {
     public class Constants
     {
-        public const string TestIp = "10.10.217.245"; // TODO: This is just a test-ip!!!
+        public const string TestIp = "192.168.68.111"; // TODO: This is just a test-ip!!!
         public const int Port = 42555;
         public static string GetLocalIPAddress()
         {

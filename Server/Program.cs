@@ -19,6 +19,7 @@ static class Program
 
             while (true)
             {
+                Console.WriteLine("Waiting for message");
                 var str = responder.ReceiveFrameString();
                 var strSeparated = str.Split(';');
                 // Decode the image and save it
@@ -52,7 +53,7 @@ static class Program
                         responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
 
                         // save it
-                        img.SaveAsPng(@"C:\Users\Baumbart13\RiderProjects\TestThings\ModifyColors\res\NetMQ.png");
+                        img.SaveAsPng(@"D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\NetMQ.png");
                         responseMsg += $"Saved Image at [{DateTime.Now}] as \"NetMQ.png\"";
                     }
                     catch (Exception e)
