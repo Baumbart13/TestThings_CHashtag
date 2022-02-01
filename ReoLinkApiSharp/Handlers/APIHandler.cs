@@ -54,6 +54,45 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         });
         return p;
     }
+    
+    private async Task<bool> LoginAsync()
+    {
+        var body = new JsonArray(new JsonObject(new[]
+        {
+            new KeyValuePair<string, JsonNode?>("cmd", "Login"),
+            new KeyValuePair<string, JsonNode?>("action", 0),
+            new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[]
+            {
+                new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[]
+                {
+                    new KeyValuePair<string, JsonNode?>("userName", "admin"),
+                    new KeyValuePair<string, JsonNode?>("password", "Orangensaft")
+                }))
+            }))
+        }));
+
+        var client = new RestClient($"{Url}?cmd=Login");
+        Console.WriteLine($"URL is {client.BuildUri(new RestRequest())}");
+        var request = new RestRequest();
+        Console.WriteLine($"JSON is\n{body.ToJsonString()}");
+        request.AddParameter("application/json", body.ToJsonString(), ParameterType.RequestBody);
+        File.WriteAllText(@"C:\Users\Baumbart13\Desktop\Request.txt", JsonSerializer.Serialize(request));
+        var response = await client.PostAsync(request);
+        Console.WriteLine("Writing response to file");
+        File.WriteAllText(@"C:\Users\Baumbart13\Desktop\ResponseContent.txt", response.Content);
+        return !response.Content.Contains("error");
+
+        if (response.IsSuccessful)
+        {
+            var data = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(response.Content)[0];
+            var code = Convert.ToInt32(data["code"]);
+            if (code == 0)
+            {
+
+            }
+        }
+        return false;
+    }
 
     /// <summary>
     /// Return login token
@@ -63,6 +102,8 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     public bool Login()
     {
         Console.WriteLine("Logging in");
+        var l = LoginAsync().Result;
+        return l;
         try
         {
             //var body = CreateBody(Username, Password);
