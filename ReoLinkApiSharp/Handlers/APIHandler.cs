@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ReoLinkApiSharp.Mixins;
@@ -57,36 +58,49 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     
     private async Task<bool> LoginAsync()
     {
-        var body = new JsonArray(new JsonObject(new[]
-        {
-            new KeyValuePair<string, JsonNode?>("cmd", "Login"),
-            new KeyValuePair<string, JsonNode?>("action", 0),
-            new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[]
-            {
-                new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[]
+        var body = JsonSerializer.Serialize(new[] { new {
+                cmd = "Login",
+                action = 0,
+                param = new
                 {
-                    new KeyValuePair<string, JsonNode?>("userName", "admin"),
-                    new KeyValuePair<string, JsonNode?>("password", "Orangensaft")
-                }))
-            }))
-        }));
-
-        var client = new RestClient($"{Url}?cmd=Login");
-        Console.WriteLine($"URL is {client.BuildUri(new RestRequest())}");
-        var request = new RestRequest();
-        Console.WriteLine($"JSON is\n{body.ToJsonString()}");
-        request.AddParameter("application/json", body.ToJsonString(), ParameterType.RequestBody);
-        File.WriteAllText(@"C:\Users\Baumbart13\Desktop\Request.txt", JsonSerializer.Serialize(request));
-        var response = await client.PostAsync(request);
+                    User = new
+                    {
+                        userName = Username,
+                        password = Password
+                    }
+                }
+            }
+        });
+        //var body = "[{'cmd': 'Login', 'action': 0, 'param': {'User': {" +
+        //               $"'userName': {Username}, 'password': {Password}" + "}}}]";
+        var param = new Dictionary<string, string>(new[]{
+                new KeyValuePair<string, string>("token", "null"),
+                new KeyValuePair<string, string>("cmd", "Login")
+            });
+        var response = RestHandler.Post(Url, body, param);
         Console.WriteLine("Writing response to file");
-        File.WriteAllText(@"C:\Users\Baumbart13\Desktop\ResponseContent.txt", response.Content);
-        return !response.Content.Contains("error");
-
-        if (response.IsSuccessful)
+        var content = response.Content.ReadAsStream();
+        var sb = new StringBuilder();
+        while (content.CanRead)
         {
-            var data = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(response.Content)[0];
-            var code = Convert.ToInt32(data["code"]);
-            if (code == 0)
+            var lByte = content.ReadByte();
+            var rByte = content.ReadByte();
+            if (lByte < 0 || rByte < 0)
+            {
+                Console.WriteLine("Shit, can't read more");
+                break;
+            }
+
+            sb.Append((char)((lByte << 8) | rByte));
+        }
+        File.WriteAllText(@"C:\Users\Baumbart13\Desktop\ResponseContent.txt", sb.ToString());
+        return true; // TODO: Delete
+
+        //if (response.IsSuccessful)
+        {
+        //    var data = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(response.Content)[0];
+        //    var code = Convert.ToInt32(data["code"]);
+        //    if (code == 0)
             {
 
             }
