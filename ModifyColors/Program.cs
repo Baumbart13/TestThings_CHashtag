@@ -273,13 +273,13 @@ namespace ModifyColors
         private static void SaveFile(string filePath, Image<Rgba32> img)
         {
             var dirPath = new DirectoryInfo(filePath).Parent.FullName;
-            logger.Info($"Directory to be created: \"{dirPath}\"");
+            logger.Debug($"Directory to be created: \"{dirPath}\"");
             if (!Directory.Exists(dirPath))
             {
                 Directory.CreateDirectory(dirPath);
             }
             
-            logger.Info($"Saving image to \"{filePath}\"");
+            logger.Debug($"Saving image to \"{filePath}\"");
             using (var outStream = File.Create(filePath))
             {
                 img.Save(outStream, new PngEncoder());

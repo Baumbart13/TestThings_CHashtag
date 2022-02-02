@@ -42,46 +42,128 @@ namespace Network
         public NetMQ.NetMQMessage ToNetMqMessage()
         {
             var netmqMsg = new NetMQMessage();
-
-            var container = new NetMQFrame(sizeof(MessageType));
-            var msgMeta = new NetMQFrame(this.MessageType switch
-            {
-                MessageType.Image => 4 * 3, // ColorFormat, Height, Width
-                MessageType.ImageRequest => 0,
-                _ => throw new NotImplementedException("Other types are not implemented by now")
-            });
-            var msg = new NetMQFrame(this.MessageType switch
+            
+            var containerFrame = CreateContainerFrame();
+            
+            var messageFrame = CreateMessageFrame();
+            /*var msg = new NetMQFrame(this.MessageType switch
             {
                 MessageType.Image => this.mMessageContent.Count,
                 MessageType.ImageRequest => 0,
                 _ => throw new NotImplementedException("Other types are not implemented by now")
-            });
+            });*/
+            var contentFrame = CreateContentFrame();
 
-            FillMsgContainer(container);
-            FillMsgContentMeta(msgMeta);
-            FillMsgContent(msg);
-
-            netmqMsg.Append(msg);
-            netmqMsg.Append(msgMeta);
-            netmqMsg.Append(container);
+            netmqMsg.Append(containerFrame);
+            netmqMsg.Append(messageFrame);
+            netmqMsg.Append(contentFrame);
 
             return netmqMsg;
         }
 
-        private static void FillMsgContainer(NetMQFrame container)
+        private NetMQFrame CreateContainerFrame()
         {
-            
+            // MessageType
+            var b = new byte[]
+            {
+                (byte) ((int) this.MessageType >> 24),
+                (byte) ((int) this.MessageType >> 16),
+                (byte) ((int) this.MessageType >> 8),
+                (byte) this.MessageType
+            };
+            return new NetMQFrame(b);
         }
 
-        private static void FillMsgContentMeta(NetMQFrame frame)
+        private NetMQFrame CreateMessageFrame()
         {
-            // TODO: Implement Network.Message.AddMsgContentMeta(NetMQFrame)
+            // Basic arguments of message
+            var messageFrame = new NetMQFrame(this.MessageType switch
+            {
+                MessageType.Image => CreateMessageFrame_Image(),
+                MessageType.ImageRequest => CreateMessageFrame_ImageRequest(),
+                _ => throw new NotImplementedException("Other types are not implemented by now")
+            });
+            return messageFrame;
+        }
+        
+#region MessageFrames
+
+        private byte[] CreateMessageFrame_Image()
+        {
+            var width = Content[0].Value.Integer;
+            var height = Content[1].Value.Integer;
+            var colorFormat = Content[2].Value.Integer;
+            // 4 byte ColorFormat + 4 byte Height + 4 byte Width
+            var b = new byte[]
+            {
+                // Width
+                (byte)(width >> 24),
+                (byte)(width >> 16),
+                (byte)(width >> 8),
+                (byte)(width),
+                
+                // Height
+                (byte)(height >> 24),
+                (byte)(height >> 16),
+                (byte)(height >> 8),
+                (byte)(height),
+                
+                // ColorFormat
+                (byte)(colorFormat >> 24),
+                (byte)(colorFormat >> 16),
+                (byte)(colorFormat >> 8),
+                (byte)(colorFormat)
+            };
+            return b;
         }
 
-        private static void FillMsgContent(NetMQFrame frame)
+        private byte[] CreateMessageFrame_ImageRequest()
         {
-            // TODO: Implement Network.Message.AddMsgContent(NetMQFrame)
+            return Array.Empty<byte>(); // information already given by tpe of message. no more bytes needed
         }
+        
+#endregion
+
+        private NetMQFrame CreateContentFrame()
+        {
+            // Sepcific arguments of message
+            var messageFrame = new NetMQFrame(this.MessageType switch
+            {
+                MessageType.Image => CreateContentFrame_Image(),
+                MessageType.ImageRequest => CreateContentFrame_ImageRequest(),
+                _ => throw new NotImplementedException("Other types are not implemented by now")
+            });
+            return messageFrame;
+        }
+        
+#region ContentFrames
+
+        private byte[] CreateContentFrame_Image()
+        {
+            var b = new byte[Content.Count - 3];
+            // Read every pixel
+            // 1 byte Red + 1 byte Green + 1 byte Blue
+            for (var i = 3; i < Content.Count; ++i)
+            {
+                var ArgColorChannel = Content[i];
+                if (ArgColorChannel.Type != MessageArgumentType.Byte)
+                {
+                    throw new ArgumentException("Wrong type of variable is being read!");
+                }
+
+                b[i - 3] = ArgColorChannel.Value.Byte;
+            }
+
+            return b;
+        }
+
+        private byte[] CreateContentFrame_ImageRequest()
+        {
+            return Array.Empty<byte>(); // information already given by tpe of message. no more bytes needed
+        }
+
+#endregion
+#region Add Content
 
         public void AddString(string str)
         {
@@ -130,7 +212,8 @@ namespace Network
                 }
             }
         }
-
+        
+#endregion
 #region AddArguments
 
         private void UpdateLength(MessageArgumentType type)
