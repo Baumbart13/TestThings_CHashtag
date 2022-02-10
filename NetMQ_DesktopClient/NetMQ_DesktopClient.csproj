@@ -8,4 +8,10 @@
 		<LangVersion>10</LangVersion>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\ModifyColors\ModifyColors.csproj" />
+	  <ProjectReference Include="..\NetworkConstants\NetworkConstants.csproj" />
+	  <ProjectReference Include="..\Network\Network.csproj" />
+	</ItemGroup>
+
 </Project>
