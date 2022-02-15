@@ -14,9 +14,9 @@ namespace Network
 
         public static Message ToArtemisMessage(this NetMQMessage msg)
         {
-            var artemisMessage = new Message();
+            //var artemisMessage = new Message();
             var containerFrame = msg[0];
-            containerFrame.
+            //containerFrame.
 
             return null;
         }
@@ -37,15 +37,16 @@ namespace Network
         {
             if (msg.MessageType != MessageType.Image)
             {
-                throw new InvalidOperationException("An Image can only be read from a Message that contains a Message");
+                throw new InvalidOperationException("An Image can only be read from a Message that contains an Image");
             }
             
             var width = msg.Content[0].Value.Integer;
             var height = msg.Content[1].Value.Integer;
-            var format = (PixelFormat)msg.Content[2].Value.Integer;
+            /*var format = (PixelFormat)msg.Content[2].Value.Integer;
             var bmp = new Bitmap(width, height, format);
             
-            return bmp;
+            return bmp;*/
+            return new Image<Rgba32>(1,1); // TODO: Need to refactor!!!
         }
     }
 }

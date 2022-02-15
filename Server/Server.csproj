@@ -16,6 +16,7 @@
         <None Update="NLog.config">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <ProjectReference Include="..\Network\Network.csproj" />
     </ItemGroup>
 
 </Project>

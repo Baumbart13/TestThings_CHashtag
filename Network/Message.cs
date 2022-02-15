@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Text;
 using ModifyColors;
 using ModifyColors.Extensions;
 using NetMQ;
@@ -31,8 +32,13 @@ namespace Network
             this.mMessageContent = new List<MessageArgument>();
         }
 
-        public static Message FromNetMqMessage(NetMQMessage netMqMsg)
+        public static Message FromNetMqMessage(NetMQMessage netMqMsg, bool isStringMsg = false)
         {
+            if (isStringMsg)
+            {
+                return NetMqMsgToStringMsg(netMqMsg);
+            }
+            
             var msg = new Message(MessageType.Image);
             
 
@@ -43,17 +49,25 @@ namespace Network
         {
             var netmqMsg = new NetMQMessage();
 
-            var container = new NetMQFrame(sizeof(MessageType));
+            // 4 bytes to hold a 32-bit int aka enum
+            //var container = new NetMQFrame(sizeof(MessageType));
+            var container = new NetMQFrame(4);
+            
+            // Amount of bytes needed for metadata of the message-content
             var msgMeta = new NetMQFrame(this.MessageType switch
             {
                 MessageType.Image => 4 * 3, // ColorFormat, Height, Width
                 MessageType.ImageRequest => 0,
+                MessageType.String => 4, // string-length
                 _ => throw new NotImplementedException("Other types are not implemented by now")
             });
+            
+            // Amount of bytes needed for the actual content of message
             var msg = new NetMQFrame(this.MessageType switch
             {
                 MessageType.Image => this.mMessageContent.Count,
                 MessageType.ImageRequest => 0,
+                MessageType.String => this.mMessageContent.Count * 2, // a character needs 2 bytes in .NET
                 _ => throw new NotImplementedException("Other types are not implemented by now")
             });
 
@@ -68,17 +82,58 @@ namespace Network
             return netmqMsg;
         }
 
-        private static void FillMsgContainer(NetMQFrame container)
+        /// <summary>
+        /// Adds the MessageType to the first NetMQFrame
+        /// </summary>
+        /// <param name="container">Where the MessageType shall be written to</param>
+        private void FillMsgContainer(NetMQFrame container)
         {
+            // set the type of message
+            var iMsgType = (int)this.MessageType;
+            var bArrMsgType = new byte[]
+            {
+                (byte)(iMsgType >> 24),
+                (byte)(iMsgType >> 16),
+                (byte)(iMsgType >> 8),
+                (byte)(iMsgType)
+            };
             
+            bArrMsgType.CopyTo(container.Buffer, 0);
         }
 
-        private static void FillMsgContentMeta(NetMQFrame frame)
+        /// <summary>
+        /// Adds the metadata of the content, like size of the packet, width and height of the image inside of the packet.
+        /// </summary>
+        /// <param name="frame"></param>
+        private void FillMsgContentMeta(NetMQFrame frame)
         {
             // TODO: Implement Network.Message.AddMsgContentMeta(NetMQFrame)
+            switch (this.MessageType)
+            {
+                case MessageType.Image:
+                    FillMsgContentMeta_Image(frame);
+                    break;
+                case MessageType.String:
+                    FillMsgContentMeta_String(frame);
+                    break;
+                default:
+                    throw new NotImplementedException("Other types are not implemented by now");
+                    break;
+            }
         }
 
-        private static void FillMsgContent(NetMQFrame frame)
+        private void FillMsgContentMeta_Image(NetMQFrame frame)
+        {
+            var iColFormat = this.mMessageContent[2].Value.Integer;
+            var bArrColFormat = new byte
+        }
+
+        private void FillMsgContentMeta_String(NetMQFrame frame)
+        {
+            // TODO: Implement Network.Message.FillMsgContentMeta_String(NetMQFrame)
+        }
+
+        private void FillMsgContent(NetMQFrame frame)
         {
             // TODO: Implement Network.Message.AddMsgContent(NetMQFrame)
         }
@@ -129,6 +184,11 @@ namespace Network
                     }
                 }
             }
+        }
+
+        private static Message NetMqMsgToStringMsg(NetMQMessage netMqMessage)
+        {
+            
         }
 
 #region AddArguments
