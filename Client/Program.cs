@@ -14,6 +14,7 @@ using static NetworkConstants.Constants;
 
 static class Program
 {
+    private const string LOAD_PATH = @"C:\Users\Baumbart13\Pictures\Camera Roll\WIN_20210527_10_50_11_Pro.jpg";
     public static void Main()
     {
         Console.WriteLine("Connecting to hello world server…");
@@ -27,9 +28,7 @@ static class Program
                 // Let's try this shit and send an image as a string
                 Image<Rgba32> img = null;
                 using (var inStream =
-                       File.Open(
-                           @"D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\Audi.png",
-                           FileMode.Open))
+                       File.Open(LOAD_PATH, FileMode.Open))
                 {
                     img = Image.Load(inStream).CloneAs<Rgba32>();
                 }

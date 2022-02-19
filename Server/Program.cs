@@ -12,11 +12,16 @@ using SixLabors.ImageSharp.Processing;
 
 static class Program
 {
+    private const string FILENAME = "NetMQ.png";
+    private const string SAVE_PATH = $@"C:\Users\Baumbart13\Pictures\{FILENAME}";
+
     public static void Main()
     {
+        Console.WriteLine("Creating server instance");
         using var responder = new ResponseSocket();
         NetworkConstants.Constants.WriteLocalIpToFile();
         responder.Bind($"tcp://*:{NetworkConstants.Constants.ServerCredentials.Port}");
+        Console.WriteLine($"Bound address to TCP on Port {NetworkConstants.Constants.ServerCredentials.Port}");
 
 
         while (true)
@@ -46,9 +51,8 @@ static class Program
         responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
             
         // save it
-        img.SaveAsPng(
-            @"D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\NetMQ.png");
-        responseMsg += $"Saved Image at [{DateTime.Now}] as \"NetMQ.png\"";
+        img.SaveAsPng(SAVE_PATH);
+        responseMsg += $"Saved Image at [{DateTime.Now}] as \"{FILENAME}\"";
 
         responder.SendFrame(responseMsg);
     }
@@ -88,9 +92,8 @@ static class Program
                 responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
 
                 // save it
-                img.SaveAsPng(
-                    @"D:\Benutzer\Baumbart13\JetBrains\Rider\TestThings_CHashtag\ModifyColors\res\NetMQ.png");
-                responseMsg += $"Saved Image at [{DateTime.Now}] as \"NetMQ.png\"";
+                img.SaveAsPng(SAVE_PATH);
+                responseMsg += $"Saved Image at [{DateTime.Now}] as \"{FILENAME}\"";
             }
             catch (Exception e)
             {
