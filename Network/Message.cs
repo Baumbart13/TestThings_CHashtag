@@ -16,11 +16,29 @@ namespace Network
 {
     public class Message
     {
+        private const string OtherTypesNotImplemented = "Other types are not mplemented by now";
         private readonly List<MessageArgument> mMessageContent;
         public IReadOnlyList<MessageArgument> Content => this.mMessageContent;
 
         private uint mSize;
-        
+
+        private int mContentIter = 0;
+
+        protected int GetContentIterIndex
+        {
+            get
+            {
+                var t = mContentIter;
+                mContentIter += 1;
+                if (mContentIter % 10 == 0)
+                {
+                    Console.WriteLine($"mContentIter is {mContentIter}");
+                }
+
+                return t;
+            }
+        }
+
         /// <summary>
         /// The Size of this message in bytes
         /// </summary>
@@ -35,16 +53,219 @@ namespace Network
 
         public static Message FromNetMqMessage(NetMQMessage netMqMsg, bool isStringMsg = false)
         {
-            if (isStringMsg)
+            // it's a stack.. damn
+            var netMqContainer = netMqMsg[2];
+            var netMqMeta = netMqMsg[1];
+            var netMqContent = netMqMsg[0];
+
+            var msgType = IdentifyMessageType(netMqContainer);
+            var msgMeta = IdentifyMessageMeta(msgType, netMqMeta);
+            var msgContent = IdentifyMessageContent(msgType, msgMeta, netMqContent);
+
+            var msg = new Message(msgType);
+            msg.mMessageContent.Capacity = msgMeta.Count + msgContent.Count;
+
+            // insert meta
+            for (var i = 0; i < msgMeta.Count; ++i)
             {
-                return NetMqMsgToStringMsg(netMqMsg);
+                var currArg = msgMeta[i];
+                switch (currArg.Type)
+                {
+                    case MessageArgumentType.Boolean:
+                        msg.AddBooleanArgument(currArg.Value.Boolean);
+                        break;
+                    case MessageArgumentType.Byte:
+                        msg.AddByteArgument(currArg.Value.Byte);
+                        break;
+                    case MessageArgumentType.Short:
+                        msg.AddShortArgument(currArg.Value.Short);
+                        break;
+                    case MessageArgumentType.Character:
+                        msg.AddCharacterArgument(currArg.Value.Character);
+                        break;
+                    case MessageArgumentType.Integer:
+                        msg.AddIntegerArgument(currArg.Value.Integer);
+                        break;
+                    case MessageArgumentType.Long:
+                        msg.AddLongArgument(currArg.Value.Long);
+                        break;
+                    case MessageArgumentType.Float:
+                        msg.AddFloatArgument(currArg.Value.Float);
+                        break;
+                    case MessageArgumentType.Double:
+                        msg.AddDoubleArgument(currArg.Value.Double);
+                        break;
+                    case MessageArgumentType.Decimal:
+                        msg.AddDecimalArgument(currArg.Value.Decimal);
+                        break;
+                    default:
+                        throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
+                }
             }
             
-            var msg = new Message(MessageType.Image);
-            
+            // Insert content
+            for (var i = 0; i < msgContent.Count; ++i)
+            {
+                var currArg = msgContent[i];
+                switch (currArg.Type)
+                {
+                    case MessageArgumentType.Boolean:
+                        msg.AddBooleanArgument(currArg.Value.Boolean);
+                        break;
+                    case MessageArgumentType.Byte:
+                        msg.AddByteArgument(currArg.Value.Byte);
+                        break;
+                    case MessageArgumentType.Short:
+                        msg.AddShortArgument(currArg.Value.Short);
+                        break;
+                    case MessageArgumentType.Character:
+                        msg.AddCharacterArgument(currArg.Value.Character);
+                        break;
+                    case MessageArgumentType.Integer:
+                        msg.AddIntegerArgument(currArg.Value.Integer);
+                        break;
+                    case MessageArgumentType.Long:
+                        msg.AddLongArgument(currArg.Value.Long);
+                        break;
+                    case MessageArgumentType.Float:
+                        msg.AddFloatArgument(currArg.Value.Float);
+                        break;
+                    case MessageArgumentType.Double:
+                        msg.AddDoubleArgument(currArg.Value.Double);
+                        break;
+                    case MessageArgumentType.Decimal:
+                        msg.AddDecimalArgument(currArg.Value.Decimal);
+                        break;
+                    default:
+                        throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
+                }
+            }
 
             return msg;
         }
+
+        /// <summary>
+        /// Adds the message type from NetMQFrame to an Artemis-message
+        /// </summary>
+        /// <param name="container">The first frame of a NetMQMessage</param>
+        /// <returns>The MessageType of the NetMQMessage</returns>
+        private static MessageType IdentifyMessageType(NetMQFrame container)
+        {
+            var bArrMsgType = container.Buffer;
+            var iMsgType = bArrMsgType.ToInt32();
+            return (MessageType)iMsgType;
+        }
+
+        /// <summary>
+        /// Adds the metadata of the content, like size of the packet, width and height of the image inside of the packet
+        /// from a NetMQFrame to an Artemis-message
+        /// </summary>
+        /// <param name="type">The MessageType previously found in the first NetMQFrame of the NetMQMessage</param>
+        /// <param name="meta">The second frame of a NetMQMessage</param>
+        /// <returns>The metadata of the content</returns>
+        /// <exception cref="NotImplementedException">Not all types of Messages are implemented</exception>
+        private static IList<MessageArgument> IdentifyMessageMeta(MessageType type, NetMQFrame meta)
+        {
+            return type switch
+            {
+                MessageType.Image => IdentifyMessageMeta_Image(meta),
+                MessageType.String => IdentifyMessageMeta_String(meta),
+                _ => throw new NotImplementedException(OtherTypesNotImplemented)
+            };
+        }
+        
+#region Identify message content meta
+
+        private static IList<MessageArgument> IdentifyMessageMeta_Image(NetMQFrame meta)
+        {
+            // ordered like
+            //
+            // Width       -> 4 byte
+            // Height      -> 4 byte
+            // ColorFormat -> 4 byte
+            var bArrWidth = new byte[4];
+            var bArrHeight = new byte[4];
+            var bArrColFormat = new byte[4];
+            var i = 0;
+            Array.Copy(meta.Buffer, i, bArrWidth, 0, bArrWidth.Length);
+            i += bArrWidth.Length;
+            Array.Copy(meta.Buffer, i, bArrHeight, 0, bArrHeight.Length);
+            i += bArrHeight.Length;
+            Array.Copy(meta.Buffer, i, bArrColFormat, 0, bArrColFormat.Length);
+            
+            // Convert byte-arrays to int and into MessageArgument
+            var iWidth = bArrWidth.ToInt32();
+            var iHeight = bArrHeight.ToInt32();
+            var iColFormat = bArrColFormat.ToInt32();
+            
+            var l = new List<MessageArgument>(3)
+            {
+                new MessageArgument(
+                    MessageArgumentType.Integer,
+                    new MessageArgumentValue{Integer = iWidth}),
+                new MessageArgument(
+                    MessageArgumentType.Integer,
+                    new MessageArgumentValue{Integer = iHeight}),
+                new MessageArgument(
+                    MessageArgumentType.Integer,
+                    new MessageArgumentValue{Integer = iColFormat})
+            };
+
+            return l;
+        }
+
+        private static IList<MessageArgument> IdentifyMessageMeta_String(NetMQFrame meta)
+        {
+            throw new NotImplementedException();
+        }
+
+#endregion
+
+        /// <summary>
+        /// Adds the content inside of a NetMQFrame to an Artemis-message
+        /// </summary>
+        /// <param name="type">The MessageType previously found in the first NetMQFrame of the NetMQMessage</param>
+        /// <param name="meta">The metadata previously found in the second NetMQFrame of the NetMQMessage</param>
+        /// <param name="content">The final and third frame of a NetMQFrame</param>
+        /// <returns>The actual content of the message</returns>
+        /// <exception cref="NotImplementedException">Not all type of Messages are implemented</exception>
+        private static IList<MessageArgument> IdentifyMessageContent(MessageType type, IList<MessageArgument> meta,  NetMQFrame content)
+        {
+            return type switch
+            {
+                MessageType.Image => IdentifyMessageContent_Image(meta, content),
+                MessageType.String => IdentifyMessageContent_String(meta, content),
+                _ => throw new NotImplementedException(OtherTypesNotImplemented)
+            };
+        }
+
+#region Identify message content
+
+        private static IList<MessageArgument> IdentifyMessageContent_Image(IList<MessageArgument> meta, NetMQFrame content)
+        {
+            // index == 0; Width
+            // index == 1; Height
+            // index == 2; ColorFormat
+            double bytesPerPixel = meta[2].Value.Integer;
+            
+            var l = new List<MessageArgument>((int)Math.Ceiling(content.BufferSize / bytesPerPixel));
+            for (var i = 0; i < content.BufferSize; ++i)
+            {
+                var pixel = new MessageArgument(
+                    MessageArgumentType.Byte,
+                    new MessageArgumentValue { Byte = content.Buffer[i] });
+                l.Add(pixel);
+            }
+
+            return l;
+        }
+
+        private static IList<MessageArgument> IdentifyMessageContent_String(IList<MessageArgument> meta, NetMQFrame content)
+        {
+            throw new NotImplementedException();
+        }
+
+#endregion
 
         public NetMQ.NetMQMessage ToNetMqMessage()
         {
@@ -60,16 +281,16 @@ namespace Network
                 MessageType.Image => 4 + 4 + 4, // ColorFormat, Height, Width
                 MessageType.ImageRequest => 0,
                 MessageType.String => 4, // string-length
-                _ => throw new NotImplementedException("Other types are not implemented by now")
+                _ => throw new NotImplementedException(OtherTypesNotImplemented)
             });
             
             // Amount of bytes needed for the actual content of message
             var msg = new NetMQFrame(this.MessageType switch
             {
-                MessageType.Image => this.mMessageContent.Count,
+                MessageType.Image => this.mMessageContent.Count-3,
                 MessageType.ImageRequest => 0,
                 MessageType.String => this.mMessageContent.Count * 2, // a character needs 2 bytes in .NET
-                _ => throw new NotImplementedException("Other types are not implemented by now")
+                _ => throw new NotImplementedException(OtherTypesNotImplemented)
             });
 
             FillMsgContainer(container);
@@ -111,7 +332,7 @@ namespace Network
                     FillMsgContentMeta_String(frame);
                     break;
                 default:
-                    throw new NotImplementedException("Other types are not implemented by now");
+                    throw new NotImplementedException(OtherTypesNotImplemented);
                     break;
             }
         }
@@ -122,14 +343,14 @@ namespace Network
         {
             // ordered like
             //
-            // Width
-            // Height
-            // ColorFormat
-            var iWidth = this.mMessageContent[0].Value.Integer;
+            // Width       -> 4 byte
+            // Height      -> 4 byte
+            // ColorFormat -> 4 byte
+            var iWidth = this.mMessageContent[GetContentIterIndex].Value.Integer;
             var bArrWidth = iWidth.ToBytes();
-            var iHeight = this.mMessageContent[2].Value.Integer;
+            var iHeight = this.mMessageContent[GetContentIterIndex].Value.Integer;
             var bArrHeight = iHeight.ToBytes();
-            var iColFormat = this.mMessageContent[2].Value.Integer;
+            var iColFormat = this.mMessageContent[GetContentIterIndex].Value.Integer;
             var bArrColFormat = iColFormat.ToBytes();
 
             var arrCombined = new byte[bArrWidth.Length + bArrHeight.Length + bArrColFormat.Length];
@@ -158,15 +379,20 @@ namespace Network
                     FillMsgContent_String(frame);
                     break;
                 default:
-                    throw new NotImplementedException("Other types are not implemented by now");
+                    throw new NotImplementedException(OtherTypesNotImplemented);
                     break;
             }
+
+            this.mContentIter = 0;
         }
 
 #region Fill Message content
         private void FillMsgContent_Image(NetMQFrame frame)
         {
-            // TODO: Implement Network.Message.FillMsgContent_Image(NetMQFrame)
+            for (var i = 0; i < frame.BufferSize; ++i)
+            {
+                frame.Buffer[i] = this.mMessageContent[GetContentIterIndex].Value.Byte;
+            }
         }
 
         private void FillMsgContent_String(NetMQFrame frame)
@@ -227,7 +453,7 @@ namespace Network
 
         private static Message NetMqMsgToStringMsg(NetMQMessage netMqMessage)
         {
-            
+            throw new NotImplementedException();
         }
 
 #region AddArguments
