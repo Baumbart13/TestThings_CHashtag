@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-
-using ModifyColors.Extensions;
-
 using CommandLine;
-
+using ModifyColors.Extensions;
 using NLog.Targets;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;

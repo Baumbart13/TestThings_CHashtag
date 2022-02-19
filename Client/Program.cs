@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using ModifyColors;
 using NetMQ;
@@ -9,7 +7,6 @@ using NetMQ.Sockets;
 using Network;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using static NetworkConstants.Constants;
 
 static class Program

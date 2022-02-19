@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
 using ModifyColors;
 using NetMQ;
 using NetMQ.Sockets;
 using Network;
+using NetworkConstants;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 static class Program
 {
@@ -19,9 +16,9 @@ static class Program
     {
         Console.WriteLine("Creating server instance");
         using var responder = new ResponseSocket();
-        NetworkConstants.Constants.WriteLocalIpToFile();
-        responder.Bind($"tcp://*:{NetworkConstants.Constants.ServerCredentials.Port}");
-        Console.WriteLine($"Bound address to TCP on Port {NetworkConstants.Constants.ServerCredentials.Port}");
+        Constants.WriteLocalIpToFile();
+        responder.Bind($"tcp://*:{Constants.ServerCredentials.Port}");
+        Console.WriteLine($"Bound address to TCP on Port {Constants.ServerCredentials.Port}");
 
 
         while (true)

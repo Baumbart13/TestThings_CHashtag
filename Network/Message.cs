@@ -1,15 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Text;
 using ModifyColors;
-using ModifyColors.Extensions;
 using NetMQ;
 using Network.Utils;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Network
@@ -71,7 +63,7 @@ namespace Network
             var msg = new Message(msgType);
             msg.mMessageContent.Capacity = msgMeta.Count + msgContent.Count;
 
-            // insert meta
+#region insert meta
             for (var i = 0; i < msgMeta.Count; ++i)
             {
                 var currArg = msgMeta[i];
@@ -99,8 +91,9 @@ namespace Network
                         throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
                 }
             }
+#endregion
             
-            // Insert content
+#region Insert content
             for (var i = 0; i < msgContent.Count; ++i)
             {
                 var currArg = msgContent[i];
@@ -128,6 +121,7 @@ namespace Network
                         throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
                 }
             }
+#endregion
 
             return msg;
         }
@@ -255,7 +249,7 @@ namespace Network
 
 #endregion
 
-        public NetMQ.NetMQMessage ToNetMqMessage()
+        public NetMQMessage ToNetMqMessage()
         {
             var netmqMsg = new NetMQMessage();
 
@@ -412,7 +406,7 @@ namespace Network
             this.AddIntegerArgument(img.Width);
             this.AddIntegerArgument(img.Height);
 
-            ModifyColors.ImageManipulator.CheckAndCorrectColorFormat(img);
+            ImageManipulator.CheckAndCorrectColorFormat(img);
             var colorFormat = ImageManipulator.GetColorFormat(img);
             this.AddIntegerArgument((Int32)colorFormat);
 
