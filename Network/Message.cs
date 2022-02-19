@@ -51,7 +51,7 @@ namespace Network
             this.mMessageContent = new List<MessageArgument>();
         }
 
-        public static Message FromNetMqMessage(NetMQMessage netMqMsg, bool isStringMsg = false)
+        public static Message FromNetMqMessage(NetMQMessage netMqMsg)
         {
             // it's a stack.. damn
             var netMqContainer = netMqMsg[2];
