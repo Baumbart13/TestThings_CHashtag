@@ -21,7 +21,7 @@ namespace Network
             return null;
         }
 
-        public static object ReadString(this Message msg)
+        public static string ReadString(this Message msg)
         {
             var length = msg.Content[0].Value.Integer;
             var sb = new StringBuilder(length);
