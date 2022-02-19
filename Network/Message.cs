@@ -54,9 +54,15 @@ namespace Network
         public static Message FromNetMqMessage(NetMQMessage netMqMsg)
         {
             // it's a stack.. damn
-            var netMqContainer = netMqMsg[2];
+            // need to read it the other way around, as I sent it
+            var netMqContent = netMqMsg.Pop();
+            var netMqMeta = netMqMsg.Pop();
+            var netMqContainer = netMqMsg.Pop();
+            
+            // old version
+            /*var netMqContainer = netMqMsg[2];
             var netMqMeta = netMqMsg[1];
-            var netMqContent = netMqMsg[0];
+            var netMqContent = netMqMsg[0];*/
 
             var msgType = IdentifyMessageType(netMqContainer);
             var msgMeta = IdentifyMessageMeta(msgType, netMqMeta);
