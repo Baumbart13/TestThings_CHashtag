@@ -72,32 +72,23 @@ namespace Network
                 switch (currArg.Type)
                 {
                     case MessageArgumentType.Boolean:
-                        msg.AddBooleanArgument(currArg.Value.Boolean);
-                        break;
+                        msg.AddBooleanArgument(currArg.Value.Boolean); break;
                     case MessageArgumentType.Byte:
-                        msg.AddByteArgument(currArg.Value.Byte);
-                        break;
+                        msg.AddByteArgument(currArg.Value.Byte); break;
                     case MessageArgumentType.Short:
-                        msg.AddShortArgument(currArg.Value.Short);
-                        break;
+                        msg.AddShortArgument(currArg.Value.Short); break;
                     case MessageArgumentType.Character:
-                        msg.AddCharacterArgument(currArg.Value.Character);
-                        break;
+                        msg.AddCharacterArgument(currArg.Value.Character); break;
                     case MessageArgumentType.Integer:
-                        msg.AddIntegerArgument(currArg.Value.Integer);
-                        break;
+                        msg.AddIntegerArgument(currArg.Value.Integer); break;
                     case MessageArgumentType.Long:
-                        msg.AddLongArgument(currArg.Value.Long);
-                        break;
+                        msg.AddLongArgument(currArg.Value.Long); break;
                     case MessageArgumentType.Float:
-                        msg.AddFloatArgument(currArg.Value.Float);
-                        break;
+                        msg.AddFloatArgument(currArg.Value.Float); break;
                     case MessageArgumentType.Double:
-                        msg.AddDoubleArgument(currArg.Value.Double);
-                        break;
+                        msg.AddDoubleArgument(currArg.Value.Double); break;
                     case MessageArgumentType.Decimal:
-                        msg.AddDecimalArgument(currArg.Value.Decimal);
-                        break;
+                        msg.AddDecimalArgument(currArg.Value.Decimal); break;
                     default:
                         throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
                 }
@@ -110,32 +101,23 @@ namespace Network
                 switch (currArg.Type)
                 {
                     case MessageArgumentType.Boolean:
-                        msg.AddBooleanArgument(currArg.Value.Boolean);
-                        break;
+                        msg.AddBooleanArgument(currArg.Value.Boolean); break;
                     case MessageArgumentType.Byte:
-                        msg.AddByteArgument(currArg.Value.Byte);
-                        break;
+                        msg.AddByteArgument(currArg.Value.Byte); break;
                     case MessageArgumentType.Short:
-                        msg.AddShortArgument(currArg.Value.Short);
-                        break;
+                        msg.AddShortArgument(currArg.Value.Short); break;
                     case MessageArgumentType.Character:
-                        msg.AddCharacterArgument(currArg.Value.Character);
-                        break;
+                        msg.AddCharacterArgument(currArg.Value.Character); break;
                     case MessageArgumentType.Integer:
-                        msg.AddIntegerArgument(currArg.Value.Integer);
-                        break;
+                        msg.AddIntegerArgument(currArg.Value.Integer); break;
                     case MessageArgumentType.Long:
-                        msg.AddLongArgument(currArg.Value.Long);
-                        break;
+                        msg.AddLongArgument(currArg.Value.Long); break;
                     case MessageArgumentType.Float:
-                        msg.AddFloatArgument(currArg.Value.Float);
-                        break;
+                        msg.AddFloatArgument(currArg.Value.Float); break;
                     case MessageArgumentType.Double:
-                        msg.AddDoubleArgument(currArg.Value.Double);
-                        break;
+                        msg.AddDoubleArgument(currArg.Value.Double); break;
                     case MessageArgumentType.Decimal:
-                        msg.AddDecimalArgument(currArg.Value.Decimal);
-                        break;
+                        msg.AddDecimalArgument(currArg.Value.Decimal); break;
                     default:
                         throw new NotSupportedException($"The '{nameof(MessageArgumentType)}' with a value of '{(int)currArg.Type}' is not supported");
                 }
