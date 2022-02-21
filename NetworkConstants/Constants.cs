@@ -13,6 +13,7 @@ namespace NetworkConstants
             public string Username { get; private set; } = "";
             public string Password { get; private set; } = "";
             public const int Port = 42555;
+            public const string TestServerIp = "142.132.224.12";
             private ServerCredentials(){}
 
             public static ServerCredentials FromConfigFile(string filePath)

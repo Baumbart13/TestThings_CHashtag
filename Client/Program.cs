@@ -17,7 +17,7 @@ static class Program
         Console.WriteLine("Connecting to hello world server…");
         using (var requester = new NetMQ.Sockets.RequestSocket())
         {
-            requester.Connect($"tcp://{Localhost}:{ServerCredentials.Port}");
+            requester.Connect($"tcp://{ServerCredentials.TestServerIp}:{ServerCredentials.Port}");
 
             int requestNumber;
             //for (requestNumber = 0; requestNumber != 10; requestNumber++)
