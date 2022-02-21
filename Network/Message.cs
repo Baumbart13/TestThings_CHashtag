@@ -22,10 +22,6 @@ namespace Network
             {
                 var t = mContentIter;
                 mContentIter += 1;
-                if (mContentIter % 10 == 0)
-                {
-                    Console.WriteLine($"mContentIter is {mContentIter}");
-                }
 
                 return t;
             }
