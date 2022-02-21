@@ -11,7 +11,7 @@ using static NetworkConstants.Constants;
 
 static class Program
 {
-    private const string LOAD_PATH = @"C:\Users\Baumbart13\Pictures\Camera Roll\WIN_20210527_10_50_11_Pro.jpg";
+    private const string LOAD_PATH = @"C:\Users\Baumbart13\Pictures\Background1.png";
     public static void Main()
     {
         Console.WriteLine("Connecting to hello world server…");

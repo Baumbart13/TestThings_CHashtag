@@ -426,7 +426,7 @@ namespace Network
                             this.AddByteArgument(p.R);
                             break;
                         default:
-                            throw new NotSupportedException("Only RGB and Greyscale are supported");
+                            throw new NotSupportedException("Only RGB and Greyscale images are supported");
                     }
                 }
             }

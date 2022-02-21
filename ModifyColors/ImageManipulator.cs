@@ -47,6 +47,10 @@ namespace ModifyColors
         public static ColorFormat GetColorFormat(Image<Rgba32> img)
         {
             var props = img.GetConfiguration().Properties;
+            if (!props.ContainsKey(nameof(ColorFormat)))
+            {
+                CheckAndCorrectColorFormat(img);
+            }
             return (ColorFormat)props[nameof(ColorFormat)];
         }
 

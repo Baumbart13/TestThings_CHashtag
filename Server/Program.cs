@@ -49,7 +49,7 @@ static class Program
             
         // save it
         img.SaveAsPng(SAVE_PATH);
-        responseMsg += $"Saved Image at [{DateTime.Now}] as \"{FILENAME}\"";
+        responseMsg += $"Saved Image at [{DateTime.Now}] as \"{SAVE_PATH}\"";
 
         responder.SendFrame(responseMsg);
     }

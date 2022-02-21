@@ -24,5 +24,7 @@ public class DirectoryConfguration
         {
             
         }
+
+        return new DirectoryConfguration("", ""); // TODO: Need to finish this
     }
 }

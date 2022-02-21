@@ -1,4 +1,5 @@
 using System.Text;
+using ModifyColors;
 using NetMQ;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -36,14 +37,47 @@ namespace Network
             {
                 throw new InvalidOperationException("An Image can only be read from a Message that contains an Image");
             }
+
+            var i = 0;
+            var width = msg.Content[i++].Value.Integer;
+            var height = msg.Content[i++].Value.Integer;
+            var format = (ColorFormat)msg.Content[i++].Value.Integer;
+            var img = new Image<Rgba32>(width, height);
             
-            var width = msg.Content[0].Value.Integer;
-            var height = msg.Content[1].Value.Integer;
-            /*var format = (PixelFormat)msg.Content[2].Value.Integer;
-            var bmp = new Bitmap(width, height, format);
-            
-            return bmp;*/
-            return new Image<Rgba32>(1,1); // TODO: Need to refactor!!!
+            // fill pixels
+            switch (format)
+            {
+#region Rgba32
+                case ColorFormat.Rgba32:
+                    for (var x = 0; x < width; ++x)
+                    {
+                        for (var y = 0; y < height; ++y)
+                        {
+                            var r = msg.Content[i++].Value.Byte;
+                            var g = msg.Content[i++].Value.Byte;
+                            var b = msg.Content[i++].Value.Byte;
+                            img[x, y] = new Rgba32(r,g,b);
+                        }
+                    }
+                    break;
+#endregion
+#region Grayscale
+                case ColorFormat.Grayscale:
+                    for (var x = 0; x < width; ++x)
+                    {
+                        for (var y = 0; y < height; ++y)
+                        {
+                            var gray = msg.Content[i++].Value.Byte;
+                            img[x, y] = new Rgba32(gray, gray, gray);
+                        }
+                    }
+                    break;
+#endregion
+                default:
+                    throw new NotSupportedException("Only RGB and Greyscale images are supported");
+            }
+            ImageManipulator.CheckAndCorrectColorFormat(img);
+            return img;
         }
     }
 }
