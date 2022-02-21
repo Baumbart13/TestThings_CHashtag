@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.PixelFormats;
 static class Program
 {
     private const string FILENAME = "NetMQ.png";
-    private const string SAVE_PATH = $@"C:\Users\Baumbart13\Pictures\{FILENAME}";
+    private const string SAVE_PATH = $"~/diplomarbeit/foto_saves/{FILENAME}";
 
     public static void Main()
     {
