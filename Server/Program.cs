@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net.Http;
+using System.Text;
 using ModifyColors;
 using NetMQ;
 using NetMQ.Sockets;
@@ -20,7 +22,6 @@ static class Program
         responder.Bind($"tcp://*:{Constants.ServerCredentials.Port}");
         Console.WriteLine($"Bound address to TCP on Port {Constants.ServerCredentials.Port}");
 
-
         while (true)
         {
             Console.WriteLine("Waiting for message");
@@ -29,6 +30,47 @@ static class Program
             VersionArtemisMessage(responder);
         }
     }
+    public static async void SendMessage(string title, string msg, string webhook)
+    {
+        try
+        {
+            DateTime now = DateTime.Now;
+            string[] strArray = new string[20];
+            strArray[0] = "{\"username\":\"Netzwerk-Server-Log\",\"avatar_url\":\"https://discord.com/channels/707008612207296562/717408941881163827/862005945549586512\",\"content\":\"\",\"embeds\":[{\"author\":{\"name\":\" \",\"url\":\"https://discord.gg/rvUxcnZEqz\",\"icon_url\":\"https://discord.com/channels/707008612207296562/717408941881163827/862005945549586512\"},\"title\":\"" + title + "\",\"thumbnail\":{\"url\":\"https://discord.com/channels/707008612207296562/717408941881163827/862005945549586512\"},\"url\":\"https://discord.gg/rvUxcnZEqz\",\"description\":\"**";
+            int num = now.Day;
+            strArray[1] = num.ToString();
+            strArray[2] = ".";
+            num = now.Month;
+            strArray[3] = num.ToString();
+            strArray[4] = ".";
+            num = now.Year;
+            strArray[5] = num.ToString();
+            strArray[6] = " | ";
+            num = now.Hour;
+            strArray[7] = num.ToString();
+            strArray[8] = ":";
+            num = now.Minute;
+            strArray[9] = num.ToString();
+            strArray[10] = "**\",\"color\":1127128,\"fields\":[{\"name\":\"";
+            strArray[11] = title;
+            strArray[12] = "\",\"value\":\"";
+            strArray[13] = msg;
+            strArray[14] = "\",\"inline\":true}]}]}";
+            string stringPayload = string.Concat(strArray);
+            StringContent httpContent = new StringContent(stringPayload, Encoding.UTF8, "application/json");
+            using (HttpClient httpClient = new HttpClient())
+            {
+                HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(webhook, (HttpContent)httpContent);
+            }
+            stringPayload = (string)null;
+            httpContent = (StringContent)null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
 
     private static void VersionArtemisMessage(ResponseSocket responder)
     {
@@ -42,9 +84,12 @@ static class Program
         var img = artemisMsg.ReadImage();
         var colFormat = ImageManipulator.GetColorFormat(img) == ColorFormat.Rgba32 ? "Rgba32" : "Grayscale";
         Console.WriteLine($"ColorFormat is {colFormat}");
+        SendMessage("LOG",$"ColorFormat is {colFormat}","https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
         var Width = img.Width;
         var Height = img.Height;
         Console.WriteLine($"Image has a size of {Width}x{Height} pixels");
+        SendMessage("LOG",$"Image has a size of {Width}x{Height} pixels","https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
+
         responseMsg += $"Decoded Image at [{DateTime.Now}]\n";
             
         // save it
@@ -60,15 +105,20 @@ static class Program
         var strSeparated = str.Split(';');
         // Decode the image and save it
         Console.WriteLine($"[{DateTime.Now} {DateTime.Now}]: Received message from Client");
+        SendMessage("LOG",$"[{DateTime.Now} {DateTime.Now}]: Received message from Client","https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
+
         //  Decode it
         var responseMsg = $"Received Image at [{DateTime.Now} {DateTime.Now.Millisecond}]\n";
 
         var currArgFromMsg = 0;
         var colFormat = (ColorFormat)Convert.ToInt32(strSeparated[currArgFromMsg++]);
         Console.WriteLine($"ColorFormat is {nameof(colFormat)}");
+        SendMessage("LOG",$"ColorFormat is {nameof(colFormat)}","https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
+
         var Width = Convert.ToInt32(strSeparated[currArgFromMsg++]);
         var Height = Convert.ToInt32(strSeparated[currArgFromMsg++]);
         Console.WriteLine($"Image has a size of {Width}x{Height} pixels");
+        SendMessage("LOG",$"Image has a size of {Width}x{Height} pixels","https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
 
         using (var img = new Image<Rgba32>(Width, Height))
         {
@@ -95,6 +145,8 @@ static class Program
             catch (Exception e)
             {
                 Console.Error.WriteLine(e.Message);
+                SendMessage("ERROR",e.Message,"https://discord.com/api/webhooks/945307267874586714/sfprelH1jWXhYfdCNwUmjAh7g-SAHrRT3eJ4MUcOEVauV549QTWgb5BmIVfsALpHI-Tq");
+
                 responder.SendFrame(e.Message);
                 img.Dispose();
                 return;
