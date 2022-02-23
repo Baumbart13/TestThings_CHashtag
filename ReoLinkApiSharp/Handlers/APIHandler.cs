@@ -116,8 +116,6 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     public bool Login()
     {
         Console.WriteLine("Logging in");
-        var l = LoginAsync().Result;
-        return l;
         try
         {
             //var body = CreateBody(Username, Password);
@@ -134,32 +132,58 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
                     }))
                 }))
             }));
+            
+            var httpWebRequest = HttpWebRequest.CreateHttp($"{Url}?cmd=Login&token=null");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
 
-            var client = new RestClient($"{Url}?cmd=Login");
-            Console.WriteLine($"URL is {client.BuildUri(new RestRequest())}");
-            var request = new RestRequest();
-            Console.WriteLine($"JSON is\n{body.ToJsonString()}");
-            request.AddParameter("application/json", body.ToJsonString(), ParameterType.RequestBody);
-            File.WriteAllText(@"C:\Users\Baumbart13\Desktop\Request.txt", JsonSerializer.Serialize(request));
-            var response = client.PostAsync(request).Result;
-            Console.WriteLine("Writing response to file");
-            File.WriteAllText(@"C:\Users\Baumbart13\Desktop\ResponseContent.txt", response.Content);
-            return !response.Content.Contains("error");
-
-            if (response.IsSuccessful)
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
-                var data = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(response.Content)[0];
-                var code = Convert.ToInt32(data["code"]);
-                if (code == 0)
-                {
+                var json = body.ToJsonString();
+                streamWriter.Write(json);
+            }
 
-                }
+            JsonNode? response;
+            using (var streamReader = new StreamReader(httpWebRequest.GetResponse().GetResponseStream()))
+            {
+                var responseString = streamReader.ReadToEnd();
+                response = JsonNode.Parse(responseString);
+            }
+
+            // [
+            // {
+            //     "cmd" : "Login",
+            //     "code" : 0,
+            //     "value" : {
+            //         "Token" : {
+            //             "leaseTime" : 3600,
+            //             "name" : "039b4d5c64f3e7a"
+            //         }
+            //     }
+            // }
+            // ]
+
+            if (response == null || response.ToJsonString().Length < 1)
+            {
+                Console.WriteLine("Failed to login\nResponse was null");
+                return false;
+            }
+
+            var jsonArray = response.AsArray();
+            var jsonData = jsonArray[0];
+            var code = jsonData["code"].ToJsonString();
+            Console.WriteLine($"code is \"{code}\"");
+            if (code.Equals("0"))
+            {
+                Token = jsonData["value"]["Token"]["name"].ToJsonString().Replace("\"", "");
+                Console.WriteLine($"Token is \"{Token}\"");
+                return true;
             }
         }
         catch (Exception e)
         {
             Console.WriteLine($"Error Login\n{e}");
-            return false;
+            throw;
         }
 
         return false;
