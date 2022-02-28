@@ -24,6 +24,13 @@ public interface IStreamAPIMixin
         return rtspClient.OpenStream();
     }
 
+    public Image<Rgba32> ConvertVideoStreamToImage(IEnumerable<Mat> streamData)
+    {
+        
+        
+        return new Image<Rgba32>(1, 1);
+    }
+
     private static string CreateRandomString(int length)
     {
         var sb = new StringBuilder(length);
@@ -37,54 +44,53 @@ public interface IStreamAPIMixin
         return sb.ToString();
     }
 
-    private static ParametersCollection CreateCommand(string user, string password)
-    {
-        var p = new ParametersCollection(new []
-        {
-            Parameter.CreateParameter("cmd", "Snap", ParameterType.GetOrPost),
-            Parameter.CreateParameter("channel", 0, ParameterType.GetOrPost),
-            Parameter.CreateParameter("rs", CreateRandomString(10), ParameterType.GetOrPost),
-            Parameter.CreateParameter("user", user, ParameterType.GetOrPost),
-            Parameter.CreateParameter("password", password, ParameterType.GetOrPost),
-        });
-        return p;
-    }
-
     /// <summary>
     /// Gets a "snap" of the current camera video data and returns an Image
     /// </summary>
     /// <param name="timeout">Request timeout to camera in seconds</param>
-    /// <returns>Image may be empty</returns>
+    /// <returns>Image may be size of 1x1 if an error occurred</returns>
     public Image<Rgba32> GetSnap(int timeout = 3)
     {
-        var data = CreateCommand(Username, Password);
+        Console.WriteLine("Getting Snap");
+        var body = new JsonArray(new JsonObject(new[]
+        {
+            new KeyValuePair<string, JsonNode?>("cmd", "Snap"),
+            new KeyValuePair<string, JsonNode?>("channel", 0),
+            new KeyValuePair<string, JsonNode?>("rs", CreateRandomString(10)),
+            new KeyValuePair<string, JsonNode?>("user", Username),
+            new KeyValuePair<string, JsonNode?>("password", Password)
+        }));
         try
         {
-            var restClient = new RestClient(Url);
-            var request = new RestRequest();
-            request.AddOrUpdateParameters(data);
-            var response = restClient.GetAsync(request).Result;
+            var httpWebRequest = HttpWebRequest.CreateHttp($"{Url}?cmd=Login&token=null");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
 
-            if (response.StatusCode == HttpStatusCode.OK)
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
-                // Read bytes from responseContent
-                var bytes = Encoding.ASCII.GetBytes(response.Content);
-                
-                // TODO DEV: Let's try to Save everything as a text-file for a moment
-                var img = SixLabors.ImageSharp.Image<Rgba32>.Load(bytes);
-                var savePath = @"C:\Users\Baumbart13\Desktop\ReoLink.txt";
-                img.SaveAsPng(savePath);
-                //var width = ((int)bytes[0] << 8) | (int)bytes[1];
-                //var height = ((int)bytes[2] << 8) | (int)bytes[3];
-                //File.WriteAllText(savePath, $"Width:{width}\nHeigth:{height}\n");
+                var json = body.ToJsonString();
+                streamWriter.Write(json);
             }
+
+            var imageBytes = new List<int>(1920*1080);
+            using (var httpResponse = httpWebRequest.GetResponse())
+            {
+                // TODO: Check for response-status; if 200, then open image and return the image
+                using var streamReader = (httpResponse.GetResponseStream());
+                int readByte;
+                while((readByte = streamReader.ReadByte()) != -1)
+                {
+                    imageBytes.Add(readByte);
+                }
+            }
+            
         }
         catch (Exception e)
         {
             Console.WriteLine("Could not get Image data");
-            return new Image<Rgba32>(0, 0);
+            return new Image<Rgba32>(1, 1);
         }
-        return new Image<Rgba32>(0, 0);
+        return new Image<Rgba32>(1, 1);
     }
 
     public IPAddress IpAddress { get; set; }

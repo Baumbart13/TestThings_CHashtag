@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using ModifyColors;
 using NetMQ;
 using NetMQ.Sockets;
@@ -8,21 +9,34 @@ using Network;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using static NetworkConstants.Constants;
+using Configuration = Network.Utils.Configuration;
 
 static class Program
 {
-    private const string LOAD_PATH = @"C:\Users\Baumbart13\Pictures\Background1.png";
+    private const string LOAD_PATH = @"C:\Users\Baumbart13\Pictures\p1.png";
     public static void Main()
     {
+        var configPath = "";
+        Console.WriteLine("Reading config-file");
+        var config = Configuration.ReadFromFile();
+        Console.WriteLine("\n\n");
+        var configJson = config.ToJsonString();
+        Console.WriteLine("Configuration as text:\n" +
+                          "======================" +
+                          $"{configJson}");
+        return;
+        
         Console.WriteLine("Connecting to hello world server…");
         using (var requester = new NetMQ.Sockets.RequestSocket())
         {
             requester.Connect($"tcp://{ServerCredentials.TestServerIp}:{ServerCredentials.Port}");
+            Console.WriteLine($"Connected to {ServerCredentials.TestServerIp}:{ServerCredentials.Port}");
 
             int requestNumber;
             //for (requestNumber = 0; requestNumber != 10; requestNumber++)
             {
                 // Let's try this shit and send an image as a string
+                Console.WriteLine("Loading the image");
                 Image<Rgba32> img = null;
                 using (var inStream =
                        File.Open(LOAD_PATH, FileMode.Open))
@@ -39,10 +53,10 @@ static class Program
 
     private static void VersionArtemisMessage(RequestSocket requester, Image<Rgba32> img)
     {
+        Console.WriteLine("Encoding it as ArtemisMessage");
         var msg = new Network.Message(MessageType.Image);
         msg.AddImage(img);
 
-        Console.WriteLine("Encoded it as ArtemisMessage");
         img.Dispose();
 
         Console.WriteLine("Sending to server");
@@ -55,7 +69,7 @@ static class Program
     private static void VersionStrBuilder(RequestSocket requester, Image<Rgba32> img)
     {
 
-        Console.WriteLine("Encoding it to StringBuilder");
+        Console.WriteLine("Encoding it via StringBuilder");
         var sb = new StringBuilder();
         sb.Append((int)ColorFormat.Rgba32);
         sb.Append(';');
