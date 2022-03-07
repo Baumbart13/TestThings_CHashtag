@@ -1,66 +1,56 @@
 using System.Collections;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ReoLinkApiSharp.Handlers;
 
 public static class RestHandler
 {
-    private static HttpClient client = new HttpClient();
-    private static HttpRequestMessage request = new HttpRequestMessage();
 
-    private static string ProcessParameters(Dictionary<string, string> parameters)
+    private static string ProcessUrlParams(Dictionary<string, string> urlParameters)
     {
-        var paramString = "";
-        if (parameters == null)
+        var param = "";
+        foreach (var (key, value) in urlParameters)
         {
-            return paramString;
+            param = $"{param}&{key}={value}";
         }
 
-        foreach (var parameter in parameters)
-        {
-            paramString = $"&{parameter.Key}={parameter.Value}{paramString}";
-        }
-
-        if (paramString.Length != 0)
-        {
-            var index = paramString.IndexOf("&");
-            paramString = paramString.Remove(index, 1);
-            paramString = $"?{paramString}";
-        }
-
-        return paramString;
+        return param.Remove(0, 1);
     }
     
-    public static HttpResponseMessage Post(string url, string jsonData,
-        Dictionary<string, string> parameters = null)
+    public static HttpResponseMessage Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!)
     {
         try
         {
-            var param = ProcessParameters(parameters);
-            request = new HttpRequestMessage(HttpMethod.Post, $"{url}{param}");
-            Console.WriteLine($"RestHandler: request-url is {request.RequestUri}");
-            
-            var header = ("content-type", "application/json");
-            request.Headers.Add(header.Item1, header.Item2);
-            
-            Console.WriteLine("Writing httpRequestOptions");
-            foreach (var httpRequestOption in request.Options)
+            var param = ProcessUrlParams(urlParameters);
+            var httpWebRequest = WebRequest.CreateHttp($"{url}?{param}");
+            Console.WriteLine($"RestHandler: request-url is {httpWebRequest.RequestUri}");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
+
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
-                Console.WriteLine($"{httpRequestOption.Key}:{httpRequestOption.Value}");
+                var json = data.ToJsonString();
+                streamWriter.Write(json);
             }
 
-            var contentData = new StringContent(jsonData, Encoding.UTF8, header.Item2);
-            request.Content = contentData;
-
-            var response = client.Send(request);
-            if (response.IsSuccessStatusCode)
+            JsonNode? response;
+            using (var webResponse = httpWebRequest.GetResponse())
+            using (var streamReader = new StreamReader(webResponse.GetResponseStream()))
             {
-                return response;
+                Console.WriteLine("WebResponse Headers");
+                foreach (var x in webResponse.Headers)
+                {
+                    Console.WriteLine(x);
+                }
+                Console.WriteLine("End of Headers\n===========");
+                var responseString = streamReader.ReadToEnd();
+                response = JsonNode.Parse(responseString);
             }
-            throw new ArgumentException($"Http Request had non-200 Status: {response.StatusCode}");
         }
         catch (Exception e)
         {
@@ -70,29 +60,29 @@ public static class RestHandler
         return new HttpResponseMessage();
     }
     
-    public static HttpResponseMessage Get(IPAddress Url, DictionaryBase jsonData,
+    /*public static HttpResponseMessage Get(IPAddress Url, DictionaryBase jsonData,
         Dictionary<string, string> parameters = null)
     {
         try
         {
             var param = ProcessParameters(parameters);
-            request = new HttpRequestMessage(HttpMethod.Get, $"{Url}{param}");
-            Console.WriteLine($"RestHandler: request-url is {request.RequestUri}");
+            httpWebRequest = new HttpRequestMessage(HttpMethod.Get, $"{Url}{param}");
+            Console.WriteLine($"RestHandler: request-url is {httpWebRequest.RequestUri}");
             
             var header = ("content-type", "application/json");
-            request.Headers.Add(header.Item1, header.Item2);
+            httpWebRequest.Headers.Add(header.Item1, header.Item2);
             
             Console.WriteLine("Writing httpRequestOptions");
-            foreach (var httpRequestOption in request.Options)
+            foreach (var httpRequestOption in httpWebRequest.Options)
             {
                 Console.WriteLine($"{httpRequestOption.Key}:{httpRequestOption.Value}");
             }
 
             var json = JsonSerializer.Serialize(jsonData);
             var contentData = new StringContent(json, Encoding.UTF8, header.Item2);
-            request.Content = contentData;
+            httpWebRequest.Content = contentData;
 
-            var response = client.Send(request);
+            var response = client.Send(httpWebRequest);
             if (response.IsSuccessStatusCode)
             {
                 return response;
@@ -105,5 +95,5 @@ public static class RestHandler
         }
 
         return new HttpResponseMessage();
-    }
+    }*/
 }
