@@ -7,6 +7,8 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ReoLinkApiSharp.Mixins;
 using RestSharp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace ReoLinkApiSharp.Handlers;
 
@@ -26,6 +28,14 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     public string Url { get; set; }
     private string _token = "null";
 
+    public Image<Rgba32> GetSnap()
+    {
+        return (this as IStreamAPIMixin).GetSnap(Token);
+    }
+
+    /// <summary>
+    /// If Token is null a string with value of "null" will be returned.
+    /// </summary>
     public string Token
     {
         get
@@ -83,13 +93,14 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
 
         JsonNode? response;
         using (var httpResponse = client.PostAsJsonAsync($"{Url}?{api}", contentData).Result)
-        //using (var httpResponse = client.PostAsync(api, contentData).Result)
+            //using (var httpResponse = client.PostAsync(api, contentData).Result)
         {
             if (!httpResponse.IsSuccessStatusCode)
             {
                 Console.WriteLine("Nope, there was an error");
                 return;
             }
+
             var stringData = httpResponse.Content.ReadAsStringAsync().Result;
             response = JsonNode.Parse(stringData);
         }
@@ -112,7 +123,12 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         }
     }
 
-    public bool LoginTest()
+    /// <summary>
+    /// Get login token
+    /// Must be called first, before any other operation can be performed
+    /// </summary>
+    /// <returns>True, if login was successful</returns>
+    public bool Login()
     {
         Console.WriteLine("Logging in");
         try
@@ -131,8 +147,14 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
                     }))
                 }))
             }));
+            var param = new Dictionary<string, string>
+            {
+                { "cmd", "Login" },
+                { "token", Token }
+            };
 
-            Post
+            var webResponse = RestHandler.Post(Url, body, param);
+            var response = webResponse.ToJsonNode();
 
             // [
             // {
@@ -173,84 +195,65 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         return false;
     }
 
-    /// <summary>
-    /// Return login token
-    /// Must be called first, before any other operation can be performed
-    /// </summary>
-    /// <returns></returns>
-    public bool Login()
+    public bool Logout()
     {
-        Console.WriteLine("Logging in");
         try
         {
-            //var body = CreateBody(Username, Password);
             var body = new JsonArray(new JsonObject(new[]
             {
-                new KeyValuePair<string, JsonNode?>("cmd", "Login"),
-                new KeyValuePair<string, JsonNode?>("action", 0),
-                new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[]
-                {
-                    new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[]
-                    {
-                        new KeyValuePair<string, JsonNode?>("userName", "admin"),
-                        new KeyValuePair<string, JsonNode?>("password", "Orangensaft")
-                    }))
-                }))
+                new KeyValuePair<string, JsonNode?>("cmd", "Logout"),
+                new KeyValuePair<string, JsonNode?>("action", 0)
             }));
-
-            var httpWebRequest = HttpWebRequest.CreateHttp($"{Url}?cmd=Login&token=null");
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Method = "POST";
-
-            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-            {
-                var json = body.ToJsonString();
-                streamWriter.Write(json);
-            }
-
-            JsonNode? response;
-            using (var streamReader = new StreamReader(httpWebRequest.GetResponse().GetResponseStream()))
-            {
-                var responseString = streamReader.ReadToEnd();
-                response = JsonNode.Parse(responseString);
-            }
-
-            // [
-            // {
-            //     "cmd" : "Login",
-            //     "code" : 0,
-            //     "value" : {
-            //         "Token" : {
-            //             "leaseTime" : 3600,
-            //             "name" : "039b4d5c64f3e7a"
-            //         }
-            //     }
-            // }
-            // ]
-
-            if (response == null || response.ToJsonString().Length < 1)
-            {
-                Console.WriteLine("Failed to login\nResponse was null");
-                return false;
-            }
-
-            var jsonArray = response.AsArray();
-            var jsonData = jsonArray[0];
-            var code = jsonData["code"].ToJsonString();
-            Console.WriteLine($"code is \"{code}\"");
-            if (code.Equals("0"))
-            {
-                Token = jsonData["value"]["Token"]["name"].ToJsonString().Replace("\"", "");
-                Console.WriteLine($"Token is \"{Token}\"");
-                return true;
-            }
+            ExecuteCommand("Logout", body);
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error Login\n{e}");
-            throw;
+            Console.WriteLine($"Error Logout\n{e}");
+            return false;
         }
 
-        return false;
+        return true;
+    }
+
+    /// <summary>
+    /// Send a POST request to the IP camera with given data
+    /// </summary>
+    /// <param name="cmd">Name of the command to send</param>
+    /// <param name="data">Object to send to the camera (send as JSON)</param>
+    /// <param name="multiStepCmd">Whether the given command name should be added to the URL parameters of the request. Defaults to false. (Some multi-step commands seem to not have a single command name)</param>
+    /// <returns>Response JSON</returns>
+    protected JsonNode ExecuteCommand(string cmd, JsonNode data, bool multiStepCmd = false)
+    {
+        var param = new Dictionary<string, string>{
+            { "token", Token },
+            { "cmd", cmd }
+        };
+        if (multiStepCmd)
+        {
+            param.Remove("cmd");
+        }
+
+        try
+        {
+            if (Token.Equals("null"))
+            {
+                throw new WebException("Login first");
+            }
+
+            if (!cmd.Equals("Download"))
+            {
+                var response = RestHandler.Post(Url, data, param);
+                var jsonResponse = response.ToJsonNode() ?? new JsonObject();
+
+                return jsonResponse;
+            }
+
+            throw new NotImplementedException("Need to implement the \"Download\" command");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Command {cmd} failed: {e}");
+            throw;
+        }
     }
 }

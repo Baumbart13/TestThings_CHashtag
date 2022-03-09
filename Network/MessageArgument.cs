@@ -1,6 +1,4 @@
-using System;
 using System.Text;
-using NLog;
 
 namespace Network
 {

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Data;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -13,6 +14,10 @@ public static class RestHandler
 
     private static string ProcessUrlParams(Dictionary<string, string> urlParameters)
     {
+        if (urlParameters == null)
+        {
+            return "";
+        }
         var param = "";
         foreach (var (key, value) in urlParameters)
         {
@@ -20,6 +25,19 @@ public static class RestHandler
         }
 
         return param.Remove(0, 1);
+    }
+
+    internal static HttpResponseMessage ToHttpResponseMessage(this HttpWebResponse webResponse)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+
+        using (var reader = new StreamReader(webResponse.GetResponseStream()))
+        {
+            var objText = reader.ReadToEnd();
+            response.Content = new StringContent(objText, Encoding.UTF8, "application/json");
+        }
+
+        return response;
     }
     
     public static HttpResponseMessage Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!)
@@ -39,61 +57,61 @@ public static class RestHandler
             }
 
             JsonNode? response;
-            using (var webResponse = httpWebRequest.GetResponse())
-            using (var streamReader = new StreamReader(webResponse.GetResponseStream()))
+            using (var webResponse = (HttpWebResponse)httpWebRequest.GetResponse())
             {
-                Console.WriteLine("WebResponse Headers");
-                foreach (var x in webResponse.Headers)
+                if (webResponse.StatusCode == HttpStatusCode.OK)
                 {
-                    Console.WriteLine(x);
+                    return webResponse.ToHttpResponseMessage();
                 }
-                Console.WriteLine("End of Headers\n===========");
-                var responseString = streamReader.ReadToEnd();
-                response = JsonNode.Parse(responseString);
+
+                throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
             }
         }
         catch (Exception e)
         {
             Console.Error.WriteLine($"Post error\n{e}");
+            throw;
         }
+    }
 
-        return new HttpResponseMessage();
+    public static JsonNode? ToJsonNode(this HttpResponseMessage httpMsg)
+    {
+        JsonNode? response;
+        var contentString = httpMsg.Content.ReadAsStringAsync().Result;
+        response = JsonNode.Parse(contentString);
+        return response;
     }
     
-    /*public static HttpResponseMessage Get(IPAddress Url, DictionaryBase jsonData,
-        Dictionary<string, string> parameters = null)
+    public static HttpResponseMessage Get(string url, Dictionary<string, string> urlParameters = null!)
     {
         try
         {
-            var param = ProcessParameters(parameters);
-            httpWebRequest = new HttpRequestMessage(HttpMethod.Get, $"{Url}{param}");
+            var param = ProcessUrlParams(urlParameters);
+            var httpWebRequest = WebRequest.CreateHttp($"{url}?{param}");
             Console.WriteLine($"RestHandler: request-url is {httpWebRequest.RequestUri}");
-            
-            var header = ("content-type", "application/json");
-            httpWebRequest.Headers.Add(header.Item1, header.Item2);
-            
-            Console.WriteLine("Writing httpRequestOptions");
-            foreach (var httpRequestOption in httpWebRequest.Options)
-            {
-                Console.WriteLine($"{httpRequestOption.Key}:{httpRequestOption.Value}");
-            }
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "GET";
 
-            var json = JsonSerializer.Serialize(jsonData);
-            var contentData = new StringContent(json, Encoding.UTF8, header.Item2);
-            httpWebRequest.Content = contentData;
-
-            var response = client.Send(httpWebRequest);
-            if (response.IsSuccessStatusCode)
+            /*using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
-                return response;
+                var json = data.ToJsonString();
+                streamWriter.Write(json);
+            }*/
+            
+            using (var webResponse = (HttpWebResponse)httpWebRequest.GetResponse())
+            {
+                if (webResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    return webResponse.ToHttpResponseMessage();
+                }
+
+                throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
             }
-            throw new ArgumentException($"Http Request had non-200 Status: {response.StatusCode}");
         }
         catch (Exception e)
         {
             Console.Error.WriteLine($"Post error\n{e}");
+            throw;
         }
-
-        return new HttpResponseMessage();
-    }*/
+    }
 }

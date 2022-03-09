@@ -30,8 +30,7 @@ public class Camera : APIHandler
         
         if (!deferLogin)
         {
-            base.Login();
-            //base.LoginClient();
+            Login();
         }
     }
 

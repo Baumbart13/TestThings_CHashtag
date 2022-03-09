@@ -1,12 +1,12 @@
+using System.Collections;
+using System.Collections.Immutable;
 using System.Net;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Emgu.CV;
-using Emgu.CV.Structure;
+using ReoLinkApiSharp.Handlers;
 using ReoLinkApiSharp.Utils;
-using RestSharp;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace ReoLinkApiSharp.Mixins;
@@ -24,14 +24,7 @@ public interface IStreamAPIMixin
         return rtspClient.OpenStream();
     }
 
-    public Image<Rgba32> ConvertVideoStreamToImage(IEnumerable<Mat> streamData)
-    {
-        
-        
-        return new Image<Rgba32>(1, 1);
-    }
-
-    private static string CreateRandomString(int length)
+    private static string BrowserCachingPreventionString(int length)
     {
         var sb = new StringBuilder(length);
         char ch;
@@ -49,48 +42,65 @@ public interface IStreamAPIMixin
     /// </summary>
     /// <param name="timeout">Request timeout to camera in seconds</param>
     /// <returns>Image may be size of 1x1 if an error occurred</returns>
-    public Image<Rgba32> GetSnap(int timeout = 3)
+    public Image<Rgba32> GetSnap(string token, int timeout = 3)
     {
         Console.WriteLine("Getting Snap");
-        var body = new JsonArray(new JsonObject(new[]
-        {
-            new KeyValuePair<string, JsonNode?>("cmd", "Snap"),
-            new KeyValuePair<string, JsonNode?>("channel", 0),
-            new KeyValuePair<string, JsonNode?>("rs", CreateRandomString(10)),
-            new KeyValuePair<string, JsonNode?>("user", Username),
-            new KeyValuePair<string, JsonNode?>("password", Password)
-        }));
+        var param = new Dictionary<string, string>(new []{
+            new KeyValuePair<string, string>("cmd", "Snap"),
+            new KeyValuePair<string, string>("channel", "0"),
+            new KeyValuePair<string, string>("rs", BrowserCachingPreventionString(10)),
+            new KeyValuePair<string, string>("token", token)
+        });
+        var img = new Image<Rgba32>(1, 1);
         try
         {
-            var httpWebRequest = HttpWebRequest.CreateHttp($"{Url}?cmd=Login&token=null");
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Method = "POST";
-
-            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+            var response = RestHandler.Get(Url, param);
+            if (response.IsSuccessStatusCode)
             {
-                var json = body.ToJsonString();
-                streamWriter.Write(json);
-            }
-
-            var imageBytes = new List<int>(1920*1080);
-            using (var httpResponse = httpWebRequest.GetResponse())
-            {
-                // TODO: Check for response-status; if 200, then open image and return the image
-                using var streamReader = (httpResponse.GetResponseStream());
-                int readByte;
-                while((readByte = streamReader.ReadByte()) != -1)
+                var dict = response.Content.Headers.ToImmutableDictionary();
+                foreach (var (key, value) in dict)
                 {
-                    imageBytes.Add(readByte);
+                    Console.WriteLine($"{key}:{value}");
                 }
+                Console.WriteLine("=====\nContent:\n=======");
+                var receivedStr = response.Content.ReadAsStringAsync().Result;
+                var str = receivedStr;
+                File.Create()
+                File.WriteAllText(@"C:\Users\Baumbart13\ResponseContent_Python.txt", str);
+                Console.WriteLine($"Length of content: {str.Length}");
+                Console.WriteLine($"\n\n=====\n{str}\n=====");
+
+                Environment.Exit(-1);
+                // image comes directly as JPEG theoretically
+                using var stream = response.Content.ReadAsStream();
+                var decoder = new JpegDecoder();
+                var width = stream.ReadByte();
+                width = (width << 8) | stream.ReadByte();
+                var height = stream.ReadByte();
+                height = (height << 8) | stream.ReadByte();
+                img = new Image<Rgba32>(width, height);
+                var pixels = new ArrayList(1000);
+                while (stream.CanRead)
+                {
+                    if (pixels.Count > 171648)
+                    {
+                        Console.WriteLine("Content-Length cannot be more");
+                        Environment.Exit(-1);
+                    }
+                    pixels.Add(stream.ReadByte());
+                }
+
+                return img;
+                img = decoder.Decode<Rgba32>(Configuration.Default, stream);
+                return img;
             }
-            
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not get Image data");
-            return new Image<Rgba32>(1, 1);
+            Console.WriteLine($"Could not get Image data\n{e}");
+            return img;
         }
-        return new Image<Rgba32>(1, 1);
+        return img;
     }
 
     public IPAddress IpAddress { get; set; }
