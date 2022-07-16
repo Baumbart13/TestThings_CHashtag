@@ -42,7 +42,7 @@ public interface IStreamAPIMixin
     /// </summary>
     /// <param name="timeout">Request timeout to camera in seconds</param>
     /// <returns>Image may be size of 1x1 if an error occurred</returns>
-    public Image<Rgba32> GetSnap(string token, int timeout = 3)
+    public Image<Rgba32> GetSnap(int timeout = 3)
     {
         Console.WriteLine("Getting Snap");
         var param = new Dictionary<string, string>(new []{
