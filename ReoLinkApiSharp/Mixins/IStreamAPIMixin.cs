@@ -49,7 +49,8 @@ public interface IStreamAPIMixin
             new KeyValuePair<string, string>("cmd", "Snap"),
             new KeyValuePair<string, string>("channel", "0"),
             new KeyValuePair<string, string>("rs", BrowserCachingPreventionString(10)),
-            new KeyValuePair<string, string>("token", token)
+            new KeyValuePair<string, string>("user", Username),
+            new KeyValuePair<string, string>("password", Password)
         });
         var img = new Image<Rgba32>(1, 1);
         try
