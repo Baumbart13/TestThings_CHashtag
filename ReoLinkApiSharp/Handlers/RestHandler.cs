@@ -110,7 +110,7 @@ public static class RestHandler
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine($"Post error\n{e}");
+            Console.Error.WriteLine($"Get error\n{e}");
             throw;
         }
     }
