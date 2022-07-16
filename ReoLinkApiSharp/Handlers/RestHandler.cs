@@ -40,7 +40,7 @@ public static class RestHandler
         return response;
     }
     
-    public static HttpResponseMessage Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!)
+    public static HttpWebResponse Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!)
     {
         try
         {
@@ -57,15 +57,17 @@ public static class RestHandler
             }
 
             JsonNode? response;
-            using (var webResponse = (HttpWebResponse)httpWebRequest.GetResponse())
+            var webResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            if (webResponse.StatusCode == HttpStatusCode.OK)
             {
-                if (webResponse.StatusCode == HttpStatusCode.OK)
-                {
-                    return webResponse.ToHttpResponseMessage();
-                }
-
-                throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
+                // Could be converted to HttpResponseMessage straight away, but
+                // for images, the HttpWebResponse is needed
+                // Otherwise it is only possible to start reading somewhere in
+                // the middle of the image that was sent
+                return webResponse;
             }
+
+            throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
         }
         catch (Exception e)
         {
@@ -82,7 +84,7 @@ public static class RestHandler
         return response;
     }
     
-    public static HttpResponseMessage Get(string url, Dictionary<string, string> urlParameters = null!)
+    public static HttpWebResponse Get(string url, Dictionary<string, string> urlParameters = null!)
     {
         try
         {
@@ -97,16 +99,18 @@ public static class RestHandler
                 var json = data.ToJsonString();
                 streamWriter.Write(json);
             }*/
-            
-            using (var webResponse = (HttpWebResponse)httpWebRequest.GetResponse())
-            {
-                if (webResponse.StatusCode == HttpStatusCode.OK)
-                {
-                    return webResponse.ToHttpResponseMessage();
-                }
 
-                throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
+            var webResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            if (webResponse.StatusCode == HttpStatusCode.OK)
+            {
+                // Could be converted to HttpResponseMessage straight away, but
+                // for images, the HttpWebResponse is needed
+                // Otherwise it is only possible to start reading somewhere in
+                // the middle of the image that was sent
+                return webResponse;
             }
+
+            throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
         }
         catch (Exception e)
         {

@@ -153,7 +153,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
                 { "token", Token }
             };
 
-            var webResponse = RestHandler.Post(Url, body, param);
+            var webResponse = RestHandler.Post(Url, body, param).ToHttpResponseMessage();
             var response = webResponse.ToJsonNode();
 
             // [
@@ -242,7 +242,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
 
             if (!cmd.Equals("Download"))
             {
-                var response = RestHandler.Post(Url, data, param);
+                var response = RestHandler.Post(Url, data, param).ToHttpResponseMessage();
                 var jsonResponse = response.ToJsonNode() ?? new JsonObject();
 
                 return jsonResponse;
