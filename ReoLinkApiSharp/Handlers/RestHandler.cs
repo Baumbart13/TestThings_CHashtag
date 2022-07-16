@@ -9,43 +9,35 @@ using System.Text.Json.Nodes;
 
 namespace ReoLinkApiSharp.Handlers;
 
-public static class RestHandler
-{
-
-    private static string ProcessUrlParams(Dictionary<string, string> urlParameters)
-    {
-        if (urlParameters == null)
-        {
+public static class RestHandler {
+    private static string ProcessUrlParams(Dictionary<string, string> urlParameters) {
+        if (urlParameters == null) {
             return "";
         }
+
         var param = "";
-        foreach (var (key, value) in urlParameters)
-        {
+        foreach (var (key, value) in urlParameters) {
             param = $"{param}&{key}={value}";
         }
 
         return param.Remove(0, 1);
     }
 
-    internal static HttpResponseMessage ToHttpResponseMessage(this HttpWebResponse webResponse)
-    {
+    internal static HttpResponseMessage ToHttpResponseMessage(this HttpWebResponse webResponse) {
         var response = new HttpResponseMessage(HttpStatusCode.OK);
 
-        using (var reader = new StreamReader(webResponse.GetResponseStream()))
-        {
+        using (var reader = new StreamReader(webResponse.GetResponseStream())) {
             var objText = reader.ReadToEnd();
             response.Content = new StringContent(objText, Encoding.UTF8, webResponse.ContentType);
         }
 
         return response;
     }
-    
-    public static HttpWebResponse Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!)
-    {
-        try
-        {
+
+    public static HttpWebResponse Post(string url, JsonNode data, Dictionary<string, string> urlParameters = null!) {
+        try {
             var param = ProcessUrlParams(urlParameters);
-            
+
             // Can't use HttpClient -> the package is getting sent wrong if used somehow
             // ¯\_(ツ)_/¯
             var httpWebRequest = WebRequest.CreateHttp($"{url}?{param}");
@@ -53,15 +45,13 @@ public static class RestHandler
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.Method = "POST";
 
-            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-            {
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream())) {
                 var json = data.ToJsonString();
                 streamWriter.Write(json);
             }
 
             var webResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-            if (webResponse.StatusCode == HttpStatusCode.OK)
-            {
+            if (webResponse.StatusCode == HttpStatusCode.OK) {
                 // Could be converted to HttpResponseMessage straight away, but
                 // for images, the HttpWebResponse is needed
                 // Otherwise it is only possible to start reading somewhere in
@@ -70,26 +60,21 @@ public static class RestHandler
             }
 
             throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.Error.WriteLine($"Post error\n{e}");
             throw;
         }
     }
 
-    public static JsonNode? ToJsonNode(this HttpResponseMessage httpMsg)
-    {
+    public static JsonNode? ToJsonNode(this HttpResponseMessage httpMsg) {
         JsonNode? response;
         var contentString = httpMsg.Content.ReadAsStringAsync().Result;
         response = JsonNode.Parse(contentString);
         return response;
     }
-    
-    public static HttpWebResponse Get(string url, Dictionary<string, string> urlParameters = null!)
-    {
-        try
-        {
+
+    public static HttpWebResponse Get(string url, Dictionary<string, string> urlParameters = null!) {
+        try {
             var param = ProcessUrlParams(urlParameters);
             // Can't use HttpClient -> the package is getting sent wrong if used somehow
             // ¯\_(ツ)_/¯
@@ -105,8 +90,7 @@ public static class RestHandler
             }*/
 
             var webResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-            if (webResponse.StatusCode == HttpStatusCode.OK)
-            {
+            if (webResponse.StatusCode == HttpStatusCode.OK) {
                 // Could be converted to HttpResponseMessage straight away, but
                 // for images, the HttpWebResponse is needed
                 // Otherwise it is only possible to start reading somewhere in
@@ -115,9 +99,7 @@ public static class RestHandler
             }
 
             throw new WebException($"Http Request had non-200 Status: {(int)webResponse.StatusCode}");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.Error.WriteLine($"Get error\n{e}");
             throw;
         }

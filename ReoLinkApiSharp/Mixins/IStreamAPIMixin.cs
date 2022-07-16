@@ -14,22 +14,18 @@ namespace ReoLinkApiSharp.Mixins;
 /// <summary>
 /// API calls for opening a video stream or capturing an image from the camera.
 /// </summary>
-public interface IStreamAPIMixin
-{
+public interface IStreamAPIMixin {
     private static Random random = new Random();
 
-    public IEnumerable<Mat> OpenVideoStream()
-    {
+    public IEnumerable<Mat> OpenVideoStream() {
         var rtspClient = new RtspClient(IpAddress, Username, Password, Port, Profile);
         return rtspClient.OpenStream();
     }
 
-    private static string BrowserCachingPreventionString(int length)
-    {
+    private static string BrowserCachingPreventionString(int length) {
         var sb = new StringBuilder(length);
         char ch;
-        for (var i = 0; i < length; ++i)
-        {
+        for (var i = 0; i < length; ++i) {
             ch = Convert.ToChar(Convert.ToInt32(Math.Floor(26 * random.NextDouble() + 65)));
             sb.Append(ch);
         }
@@ -42,23 +38,20 @@ public interface IStreamAPIMixin
     /// </summary>
     /// <param name="timeout">Request timeout to camera in seconds</param>
     /// <returns>Image may be size of 1x1 if an error occurred</returns>
-    public Image<Rgba32> GetSnap(int timeout = 3)
-    {
+    public Image<Rgba32> GetSnap(int timeout = 3) {
         Console.WriteLine("Getting Snap");
-        var param = new Dictionary<string, string>(new []{
+        var param = new Dictionary<string, string>(new[] {
             new KeyValuePair<string, string>("cmd", "Snap"),
             new KeyValuePair<string, string>("channel", "0"),
             new KeyValuePair<string, string>("rs", BrowserCachingPreventionString(10)),
             new KeyValuePair<string, string>("user", Username),
             new KeyValuePair<string, string>("password", Password)
         });
-        
+
         var img = new Image<Rgba32>(1, 1);
-        try
-        {
+        try {
             var response = RestHandler.Get(Url, param);
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
+            if (response.StatusCode == HttpStatusCode.OK) {
                 // image comes directly as JPEG
                 var decoder = new JpegDecoder();
                 using var stream = response.GetResponseStream();
@@ -67,15 +60,13 @@ public interface IStreamAPIMixin
 
                 return img;
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.WriteLine($"Could not get Image data\n{e}");
             return img;
         }
         return img;
     }
-    
+
     public IPAddress IpAddress { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }

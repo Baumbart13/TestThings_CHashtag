@@ -18,8 +18,7 @@ namespace ReoLinkApiSharp.Handlers;
 /// This handles communication directly with the camera.
 /// </summary>
 public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, IImageAPIMixin, INetworkAPIMixin,
-    IRecordAPIMixin, ISystemAPIMixin, IUserAPIMixin, IZoomAPIMixin, IStreamAPIMixin
-{
+                          IRecordAPIMixin, ISystemAPIMixin, IUserAPIMixin, IZoomAPIMixin, IStreamAPIMixin {
     public IPAddress IpAddress { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
@@ -28,23 +27,18 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     public string Url { get; set; }
     private string _token = "null";
 
-    public Image<Rgba32> GetSnap()
-    {
+    public Image<Rgba32> GetSnap() {
         return (this as IStreamAPIMixin).GetSnap();
     }
 
     /// <summary>
     /// If Token is null a string with value of "null" will be returned.
     /// </summary>
-    public string Token
-    {
-        get
-        {
-            if (_token == "")
-            {
+    public string Token {
+        get {
+            if (_token == "") {
                 _token = "null";
             }
-
             return _token;
         }
         set => _token = value;
@@ -57,8 +51,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     /// <param name="username"></param>
     /// <param name="password"></param>
     /// <param name="https">Conenct over https</param>
-    public APIHandler(IPAddress ipAddress, string username, string password, bool https = false)
-    {
+    public APIHandler(IPAddress ipAddress, string username, string password, bool https = false) {
         var protocol = https ? "https" : "http";
         Url = $"{protocol}://{ipAddress}/cgi-bin/api.cgi";
         IpAddress = ipAddress;
@@ -67,16 +60,12 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     }
 
     [Obsolete("Please use \"Login()\". It is the only known way to communicate correctly with the camera's API")]
-    public void LoginClient()
-    {
-        var data = new JsonArray(new JsonObject(new[]
-        {
+    public void LoginClient() {
+        var data = new JsonArray(new JsonObject(new[] {
             new KeyValuePair<string, JsonNode?>("cmd", "Login"),
             new KeyValuePair<string, JsonNode?>("action", 0),
-            new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[]
-            {
-                new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[]
-                {
+            new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[] {
+                new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[] {
                     new KeyValuePair<string, JsonNode?>("userName", "admin"),
                     new KeyValuePair<string, JsonNode?>("password", "Orangensaft")
                 }))
@@ -92,11 +81,8 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         var contentData = new StringContent(data.ToJsonString(), Encoding.UTF8, contentType.ToString());
 
         JsonNode? response;
-        using (var httpResponse = client.PostAsJsonAsync($"{Url}?{api}", contentData).Result)
-            //using (var httpResponse = client.PostAsync(api, contentData).Result)
-        {
-            if (!httpResponse.IsSuccessStatusCode)
-            {
+        using (var httpResponse = client.PostAsJsonAsync($"{Url}?{api}", contentData).Result){
+            if (!httpResponse.IsSuccessStatusCode) {
                 Console.WriteLine("Nope, there was an error");
                 return;
             }
@@ -105,8 +91,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
             response = JsonNode.Parse(stringData);
         }
 
-        if (response == null || response.ToJsonString().Length < 1)
-        {
+        if (response == null || response.ToJsonString().Length < 1) {
             Console.WriteLine("Failed to login\nResponse was null");
             return;
         }
@@ -115,8 +100,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         var jsonData = jsonArray[0];
         var code = jsonData["code"].ToJsonString();
         Console.WriteLine($"code is \"{code}\"");
-        if (code.Equals("0"))
-        {
+        if (code.Equals("0")) {
             Token = jsonData["value"]["Token"]["name"].ToJsonString().Replace("\"", "");
             Console.WriteLine($"Token is \"{Token}\"");
             return;
@@ -128,27 +112,21 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     /// Must be called first, before any other operation can be performed
     /// </summary>
     /// <returns>True, if login was successful</returns>
-    public bool Login()
-    {
+    public bool Login() {
         Console.WriteLine("Logging in");
-        try
-        {
+        try {
             //var body = CreateBody(Username, Password);
-            var body = new JsonArray(new JsonObject(new[]
-            {
+            var body = new JsonArray(new JsonObject(new[] {
                 new KeyValuePair<string, JsonNode?>("cmd", "Login"),
                 new KeyValuePair<string, JsonNode?>("action", 0),
-                new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[]
-                {
-                    new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[]
-                    {
+                new KeyValuePair<string, JsonNode?>("param", new JsonObject(new[] {
+                    new KeyValuePair<string, JsonNode?>("User", new JsonObject(new[] {
                         new KeyValuePair<string, JsonNode?>("userName", "admin"),
                         new KeyValuePair<string, JsonNode?>("password", "Orangensaft")
                     }))
                 }))
             }));
-            var param = new Dictionary<string, string>
-            {
+            var param = new Dictionary<string, string> {
                 { "cmd", "Login" },
                 { "token", Token }
             };
@@ -169,8 +147,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
             // }
             // ]
 
-            if (response == null || response.ToJsonString().Length < 1)
-            {
+            if (response == null || response.ToJsonString().Length < 1) {
                 Console.WriteLine("Failed to login\nResponse was null");
                 return false;
             }
@@ -179,15 +156,12 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
             var jsonData = jsonArray[0];
             var code = jsonData["code"].ToJsonString();
             Console.WriteLine($"code is \"{code}\"");
-            if (code.Equals("0"))
-            {
+            if (code.Equals("0")) {
                 Token = jsonData["value"]["Token"]["name"].ToJsonString().Replace("\"", "");
                 Console.WriteLine($"Token is \"{Token}\"");
                 return true;
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.WriteLine($"Error Login\n{e}");
             throw;
         }
@@ -195,19 +169,14 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
         return false;
     }
 
-    public bool Logout()
-    {
-        try
-        {
-            var body = new JsonArray(new JsonObject(new[]
-            {
+    public bool Logout() {
+        try {
+            var body = new JsonArray(new JsonObject(new[] {
                 new KeyValuePair<string, JsonNode?>("cmd", "Logout"),
                 new KeyValuePair<string, JsonNode?>("action", 0)
             }));
             ExecuteCommand("Logout", body);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.WriteLine($"Error Logout\n{e}");
             return false;
         }
@@ -222,26 +191,21 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
     /// <param name="data">Object to send to the camera (send as JSON)</param>
     /// <param name="multiStepCmd">Whether the given command name should be added to the URL parameters of the request. Defaults to false. (Some multi-step commands seem to not have a single command name)</param>
     /// <returns>Response JSON</returns>
-    protected JsonNode ExecuteCommand(string cmd, JsonNode data, bool multiStepCmd = false)
-    {
-        var param = new Dictionary<string, string>{
+    protected JsonNode ExecuteCommand(string cmd, JsonNode data, bool multiStepCmd = false) {
+        var param = new Dictionary<string, string> {
             { "token", Token },
             { "cmd", cmd }
         };
-        if (multiStepCmd)
-        {
+        if (multiStepCmd) {
             param.Remove("cmd");
         }
 
-        try
-        {
-            if (Token.Equals("null"))
-            {
+        try {
+            if (Token.Equals("null")) {
                 throw new WebException("Login first");
             }
 
-            if (!cmd.Equals("Download"))
-            {
+            if (!cmd.Equals("Download")) {
                 var response = RestHandler.Post(Url, data, param).ToHttpResponseMessage();
                 var jsonResponse = response.ToJsonNode() ?? new JsonObject();
 
@@ -249,9 +213,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
             }
 
             throw new NotImplementedException("Need to implement the \"Download\" command");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Console.WriteLine($"Command {cmd} failed: {e}");
             throw;
         }

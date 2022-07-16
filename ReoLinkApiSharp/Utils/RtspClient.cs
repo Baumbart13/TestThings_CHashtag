@@ -8,8 +8,7 @@ namespace ReoLinkApiSharp.Utils;
 /// Inspiration from:
 ///     - https://github.com/ReolinkCameraAPI/reolinkapipy
 /// </summary>
-public class RtspClient
-{
+public class RtspClient {
     /// <summary>
     /// RTSP client is used to retrieve frames from the camera in a stream
     /// </summary>
@@ -20,8 +19,7 @@ public class RtspClient
     /// <param name="profile">"main" or "sub"</param>
     /// <param name="useUdp">True to use UDP, False to use TCP</param>
     public RtspClient(IPAddress ip, string username, string password, int port = 554, Profile profile = Profile.main,
-        bool useUdp = true)
-    {
+                      bool useUdp = true) {
         IpAddress = ip;
         this.Username = username;
         this.Password = password;
@@ -31,33 +29,24 @@ public class RtspClient
     }
 
     public RtspClient(IPAddress ip, string username, string password, List<Proxy> proxiesList, int port = 554,
-        Profile profile = Profile.main,
-        bool useUdp = true) : this(ip, username, password, port, profile, useUdp)
-    {
+                      Profile profile = Profile.main, bool useUdp = true) : this(ip, username, password, port, profile, useUdp) {
         Proxies = proxiesList;
     }
 
-    public void OpenVideoCapture()
-    {
+    public void OpenVideoCapture() {
         // To CAP_FFMPEG or not to?
         Capture = new Emgu.CV.VideoCapture(Url, VideoCapture.API.Ffmpeg);
     }
 
-    public IEnumerable<Mat> StreamBlocking()
-    {
-        while (true)
-        {
-            if (Capture.IsOpened)
-            {
+    public IEnumerable<Mat> StreamBlocking() {
+        while (true) {
+            if (Capture.IsOpened) {
                 var frame = new Mat();
                 var ret = Capture.Read(frame);
-                if (ret)
-                {
+                if (ret) {
                     yield return frame;
                 }
-            }
-            else
-            {
+            } else {
                 Console.WriteLine("Stream closed");
                 Capture.Stop();
                 Capture.Dispose();
@@ -66,37 +55,27 @@ public class RtspClient
         }
     }
 
-    public async void StreamNonBlocking()
-    {
-        while (!ThreadCancelled)
-        {
-            try
-            {
-                if (Capture.IsOpened)
-                {
+    public async void StreamNonBlocking() {
+        while (!ThreadCancelled) {
+            try {
+                if (Capture.IsOpened) {
                     var frame = new Mat();
                     var ret = Capture.Read(frame);
-                    if (ret)
-                    {
+                    if (ret) {
                         // Callback with frame
                     }
-                }
-                else
-                {
+                } else {
                     Console.WriteLine("Stream is closed");
                     StopStream();
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Console.WriteLine(e);
                 StopStream();
             }
         }
     }
 
-    public void StopStream()
-    {
+    public void StopStream() {
         Capture.Stop();
         Capture.Dispose();
         ThreadCancelled = true;
@@ -105,16 +84,14 @@ public class RtspClient
     /// <summary>
     /// Opens OpenCV video stream and returns the result according to theOpenCV documentation
     /// </summary>
-    public IEnumerable<Mat> OpenStream()
-    {
+    public IEnumerable<Mat> OpenStream() {
         // Reset the capture object
-        if (Capture == null || !Capture.IsOpened)
-        {
+        if (Capture == null || !Capture.IsOpened) {
             OpenVideoCapture();
         }
-        
+
         Console.WriteLine("Opening stream");
-        
+
         // Only if there is no callback, return blocking
         // otherwise return blocking, if it is on a new task
         // if it's even not that, return non-blocking stream

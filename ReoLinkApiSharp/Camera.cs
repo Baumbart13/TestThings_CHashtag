@@ -4,8 +4,7 @@ using ReoLinkApiSharp.Handlers;
 
 namespace ReoLinkApiSharp;
 
-public class Camera : APIHandler
-{
+public class Camera : APIHandler {
     /// <summary>
     /// Initialise the Camera object by passing the ip address.
     /// The default details {"username":"admin", "password":""} will be used if nothing passed
@@ -21,15 +20,13 @@ public class Camera : APIHandler
     /// eg: {"http":"socks5://[username]:[password]@[host]:[port], "https": ...}
     /// More information on proxies in requests: https://stackoverflow.com/a/15661226/9313679</param>
     public Camera(IPAddress ipAddress, string username, string password, bool https = false, bool deferLogin = false,
-        Profile profile = Profile.main) : base(ipAddress, username, password, https)
-    {
+                  Profile profile = Profile.main) : base(ipAddress, username, password, https) {
         IpAddress = ipAddress;
         Username = username;
         Password = password;
         Profile = profile;
-        
-        if (!deferLogin)
-        {
+
+        if (!deferLogin) {
             Login();
         }
     }
