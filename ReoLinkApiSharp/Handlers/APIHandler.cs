@@ -30,7 +30,7 @@ public class APIHandler : IDeviceAPIMixin, IDisplayAPIMixin, IDownloadAPIMixin, 
 
     public Image<Rgba32> GetSnap()
     {
-        return (this as IStreamAPIMixin).GetSnap(Token);
+        return (this as IStreamAPIMixin).GetSnap();
     }
 
     /// <summary>
