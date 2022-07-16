@@ -59,7 +59,6 @@ public static class RestHandler
                 streamWriter.Write(json);
             }
 
-            JsonNode? response;
             var webResponse = (HttpWebResponse)httpWebRequest.GetResponse();
             if (webResponse.StatusCode == HttpStatusCode.OK)
             {
