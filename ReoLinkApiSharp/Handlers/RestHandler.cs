@@ -34,7 +34,7 @@ public static class RestHandler
         using (var reader = new StreamReader(webResponse.GetResponseStream()))
         {
             var objText = reader.ReadToEnd();
-            response.Content = new StringContent(objText, Encoding.UTF8, "application/json");
+            response.Content = new StringContent(objText, Encoding.UTF8, webResponse.ContentType);
         }
 
         return response;
