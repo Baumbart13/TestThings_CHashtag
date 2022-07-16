@@ -45,6 +45,9 @@ public static class RestHandler
         try
         {
             var param = ProcessUrlParams(urlParameters);
+            
+            // Can't use HttpClient -> the package is getting sent wrong if used somehow
+            // ¯\_(ツ)_/¯
             var httpWebRequest = WebRequest.CreateHttp($"{url}?{param}");
             Console.WriteLine($"RestHandler: request-url is {httpWebRequest.RequestUri}");
             httpWebRequest.ContentType = "application/json";
@@ -89,6 +92,8 @@ public static class RestHandler
         try
         {
             var param = ProcessUrlParams(urlParameters);
+            // Can't use HttpClient -> the package is getting sent wrong if used somehow
+            // ¯\_(ツ)_/¯
             var httpWebRequest = WebRequest.CreateHttp($"{url}?{param}");
             Console.WriteLine($"RestHandler: request-url is {httpWebRequest.RequestUri}");
             httpWebRequest.ContentType = "application/json";
