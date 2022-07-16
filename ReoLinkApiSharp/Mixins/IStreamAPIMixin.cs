@@ -52,47 +52,19 @@ public interface IStreamAPIMixin
             new KeyValuePair<string, string>("user", Username),
             new KeyValuePair<string, string>("password", Password)
         });
+        
         var img = new Image<Rgba32>(1, 1);
         try
         {
             var response = RestHandler.Get(Url, param);
-            if (response.IsSuccessStatusCode)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                var dict = response.Content.Headers.ToImmutableDictionary();
-                foreach (var (key, value) in dict)
-                {
-                    Console.WriteLine($"{key}:{value}");
-                }
-                Console.WriteLine("=====\nContent:\n=======");
-                var receivedStr = response.Content.ReadAsStringAsync().Result;
-                var str = receivedStr;
-                File.Create()
-                File.WriteAllText(@"C:\Users\Baumbart13\ResponseContent_Python.txt", str);
-                Console.WriteLine($"Length of content: {str.Length}");
-                Console.WriteLine($"\n\n=====\n{str}\n=====");
-
-                Environment.Exit(-1);
-                // image comes directly as JPEG theoretically
-                using var stream = response.Content.ReadAsStream();
+                // image comes directly as JPEG
                 var decoder = new JpegDecoder();
-                var width = stream.ReadByte();
-                width = (width << 8) | stream.ReadByte();
-                var height = stream.ReadByte();
-                height = (height << 8) | stream.ReadByte();
-                img = new Image<Rgba32>(width, height);
-                var pixels = new ArrayList(1000);
-                while (stream.CanRead)
-                {
-                    if (pixels.Count > 171648)
-                    {
-                        Console.WriteLine("Content-Length cannot be more");
-                        Environment.Exit(-1);
-                    }
-                    pixels.Add(stream.ReadByte());
-                }
+                using var stream = response.GetResponseStream();
+                Console.WriteLine("Reading and decoding the JPEG-Array into a image");
+                decoder.Decode<Rgba32>(Configuration.Default, stream, CancellationToken.None);
 
-                return img;
-                img = decoder.Decode<Rgba32>(Configuration.Default, stream);
                 return img;
             }
         }
@@ -103,7 +75,7 @@ public interface IStreamAPIMixin
         }
         return img;
     }
-
+    
     public IPAddress IpAddress { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
